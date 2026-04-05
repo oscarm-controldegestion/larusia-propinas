@@ -885,6 +885,13 @@ function startApp(){
 // ===== WORKER =====
 let workerData=null;
 function initWorker(nrut){
+  // Ensure Propinas tab is active
+  document.querySelectorAll('.tab-content[id^="wtab"]').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#viewWorker .tab').forEach(t=>t.classList.remove('active'));
+  const propTab=document.getElementById('wtabPropinas');
+  if(propTab) propTab.classList.add('active');
+  const propBtn=document.querySelector('#viewWorker .tab');
+  if(propBtn) propBtn.classList.add('active');
   const workers=APPDATA.workers;
   let wdata=null;
   for(const [id,w] of Object.entries(workers)){
