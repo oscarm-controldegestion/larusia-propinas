@@ -692,8 +692,7 @@ tfoot td{font-weight:700;padding:10px 13px}
             <button class="btn-sec" onclick="toggleAllPass()">👁 Mostrar/Ocultar todas</button>
           </div>
           <div class="alert-info">
-            Las contraseñas marcadas <strong>Cambiada</strong> fueron modificadas por el trabajador en este dispositivo.
-            Las <strong>Default</strong> son las contraseñas iniciales (RUT sin puntos/guión).
+            Las contraseñas se muestran siempre visibles para el administrador. Las marcadas <strong>Cambiada</strong> fueron modificadas por el trabajador. Las <strong>Default</strong> son las contraseñas iniciales (RUT sin puntos ni guión).
           </div>
           <div class="table-wrap">
             <table>
@@ -1092,8 +1091,8 @@ function renderClaves(){
       <td><strong>${w.n}</strong></td>
       <td style="font-size:12px;color:#666">${w.rd}</td>
       <td>${changed?'<span class="badge-changed">Cambiada</span>':'<span class="badge-default">Default</span>'}</td>
-      <td id="pass_${nrut}"><span class="pass-hidden">••••••••</span></td>
-      <td><button class="pass-show" onclick="togglePass('${nrut}','${pass}',this)">Ver</button>
+      <td id="pass_${nrut}"><span class="pass-show" style="cursor:default">${pass}</span></td>
+      <td><button class="pass-show" onclick="togglePass('${nrut}','${pass}',this)">Ocultar</button>
           ${changed?`<button class="pass-show" style="margin-left:4px;background:#fde8e8;border-color:#f5c6c6;color:var(--rojo-err)" onclick="resetPass('${nrut}','${rut}')">Reset</button>`:''}
       </td></tr>`;
   }
@@ -1113,7 +1112,8 @@ function togglePass(nrut,pass,btn){
   }
 }
 
-let showingAll=false;
+
+let showingAll=true;
 function toggleAllPass(){
   const workers=APPDATA.workers;
   showingAll=!showingAll;
@@ -1123,8 +1123,14 @@ function toggleAllPass(){
     const pass=u?u.password:'—';
     const cell=$('pass_'+nrut);
     if(!cell)continue;
-    if(showingAll) cell.innerHTML=`<span class="pass-show" style="cursor:default">${pass}</span>`;
-    else cell.innerHTML='<span class="pass-hidden">••••••••</span>';
+    const btn=cell.parentElement.querySelector('.pass-show[onclick^="togglePass"]');
+    if(showingAll){
+      cell.innerHTML=`<span class="pass-show" style="cursor:default">${pass}</span>`;
+      if(btn)btn.textContent='Ocultar';
+    } else {
+      cell.innerHTML='<span class="pass-hidden">••••••••</span>';
+      if(btn)btn.textContent='Ver';
+    }
   }
 }
 
