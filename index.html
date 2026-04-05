@@ -205,6 +205,12 @@ tfoot td{font-weight:700;padding:10px 13px}
 .worker-card h4{font-size:13px;font-weight:700;color:var(--negro2);margin-bottom:2px}
 .worker-card p{font-size:11px;color:var(--gris-medio)}
 .worker-card .saldo{font-size:12px;font-weight:700;margin-top:7px}
+.worker-card .saldo.positivo{color:var(--verde)}
+.worker-card .saldo.negativo{color:var(--rojo-err)}
+.worker-card.saldo-positivo{border-color:rgba(61,122,74,.45);background:rgba(61,122,74,.05)}
+.worker-card.saldo-positivo:hover{border-color:var(--verde);background:rgba(61,122,74,.1)}
+.worker-card.saldo-negativo{border-color:rgba(192,57,43,.4);background:rgba(192,57,43,.04)}
+.worker-card.saldo-negativo:hover{border-color:var(--rojo-err);background:rgba(192,57,43,.09)}
 
 /* PASSWORD TABLE */
 .pass-show{font-family:monospace;font-size:12px;background:#f0f0ec;padding:3px 7px;
@@ -1026,9 +1032,9 @@ function renderWorkersList(filter=''){
     if(!w.h||!w.h.length)continue;
     if(fl&&!w.n.toLowerCase().includes(fl)&&!rut.includes(fl))continue;
     const s=w.h[w.h.length-1].s;
-    html+=`<div class="worker-card" onclick="showWorkerDetail('${rut}')">
+    html+=`<div class="worker-card ${s>=0?'saldo-positivo':'saldo-negativo'}" onclick="showWorkerDetail('${rut}')">
       <h4>${w.n}</h4><p>RUT: ${w.rd} · ${w.h.length} meses</p>
-      <div class="saldo ${s>=0?'positivo':'negativo'}">Saldo fondo: ${clp(s)}</div></div>`;
+      <div class="saldo ${s>=0?'positivo':'negativo'}">${s>=0?'✅':'⚠️'} Saldo fondo: ${clp(s)}</div></div>`;
   }
   $('workersList').innerHTML=html||'<p style="color:#888;padding:16px">Sin resultados.</p>';
 }
