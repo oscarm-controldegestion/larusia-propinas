@@ -529,11 +529,22 @@ tfoot td{font-weight:700;padding:10px 13px}
           <div class="table-wrap">
             <table>
               <thead><tr>
-                <th>#</th><th>Trabajador</th><th>RUT</th><th>Detalle</th><th>Total Consumo</th>
+                <th>#</th><th>Trabajador</th><th>RUT</th><th>Detalle</th><th>Consumido</th><th>Cobrado</th><th>Diferencial</th><th></th>
               </tr></thead>
               <tbody id="consumoAdminTbody"></tbody>
               <tfoot id="consumoAdminFoot"></tfoot>
             </table>
+          </div>
+        </div>
+
+        <!-- Panel Comandas por Trabajador -->
+        <div id="panelComandasAdmin" style="display:none">
+          <div class="section" style="margin-top:0;border:2px solid var(--dorado);border-radius:12px">
+            <div class="section-header">
+              <div class="section-title" id="panelComandasTitle">Comandas</div>
+              <button class="btn-sec" onclick="$('panelComandasAdmin').style.display='none'">&#10005; Cerrar</button>
+            </div>
+            <div id="panelComandasBody" style="padding-top:8px"></div>
           </div>
         </div>
 
@@ -1482,39 +1493,65 @@ function initWorkerConsumo(nrut) {
     $('workerConsumoBody').innerHTML = '<p style="color:var(--gris-medio);padding:20px;text-align:center">Sin registros de consumo.</p>';
     return;
   }
+
+  // Find worker history to get cobrado (c field)
+  let workerH = [];
+  for (const [wid, w] of Object.entries(APPDATA.workers || {})) {
+    if (normRut(wid) === nrut) { workerH = w.h || []; break; }
+  }
+
   const h = cdata.h;
   const totalConsumo = h.reduce((a, x) => a + (x.total || 0), 0);
-  const ultimoMes    = h[h.length - 1];
+  const totalCobrado = workerH.reduce((a, x) => a + (x.c || 0), 0);
+  const totalDif = totalConsumo - totalCobrado;
+  const totalDifColor = totalDif > 0 ? 'var(--rojo-err)' : totalDif < 0 ? 'var(--verde)' : 'var(--gris-medio)';
+  const totalDifSign = totalDif > 0 ? '+' : '';
+  const ultimoMes = h[h.length - 1];
+
   $('workerConsumoCards').innerHTML = `
-    <div class="card"><div class="card-icon naranja">ð½ï¸</div>
-      <div class="card-label">Total Consumo</div>
+    <div class="card"><div class="card-icon naranja">🍽️</div>
+      <div class="card-label">Total Consumido</div>
       <div class="card-value">${clp(totalConsumo)}</div>
       <div class="card-sub">Acumulado todos los meses</div></div>
-    <div class="card"><div class="card-icon negro">ð</div>
-      <div class="card-label">Ãltimo Mes</div>
-      <div class="card-value">${clp(ultimoMes.total || 0)}</div>
-      <div class="card-sub">${mesLblF(ultimoMes.m)}</div></div>
-    <div class="card"><div class="card-icon negro">ð</div>
+    <div class="card"><div class="card-icon negro">💳</div>
+      <div class="card-label">Total Cobrado</div>
+      <div class="card-value">${clp(totalCobrado)}</div>
+      <div class="card-sub">Descontado de propinas</div></div>
+    <div class="card"><div class="card-icon negro">⚖️</div>
+      <div class="card-label">Diferencial</div>
+      <div class="card-value" style="color:${totalDifColor}">${totalDifSign}${clp(totalDif)}</div>
+      <div class="card-sub">${totalDif > 0 ? 'Pendiente por cobrar' : totalDif < 0 ? 'A tu favor' : 'Sin diferencia'}</div></div>
+    <div class="card"><div class="card-icon negro">🗓</div>
       <div class="card-label">Meses Registrados</div>
       <div class="card-value">${h.length}</div>
-      <div class="card-sub">HistÃ³rico completo</div></div>`;
+      <div class="card-sub">Historial completo</div></div>`;
 
   let html = '';
   h.slice().reverse().forEach(mes => {
     const items = mes.items || [];
+    const cobrado = (workerH.find(wh => wh.m === mes.m)?.c || 0);
+    const consumido = mes.total || 0;
+    const diferencial = consumido - cobrado;
+    const difColor = diferencial > 0 ? 'var(--rojo-err)' : diferencial < 0 ? 'var(--verde)' : 'var(--gris-medio)';
+    const difSign = diferencial > 0 ? '+' : '';
     const itemsList = items.length
-      ? items.map(it => `<tr><td style="padding:6px 12px;color:var(--gris-medio);font-size:12px">â³ ${it.det}</td><td class="num" style="padding:6px 12px;font-size:12px">${clp(it.monto)}</td></tr>`).join('')
+      ? items.map(it => `<tr><td style="padding:6px 12px;color:var(--gris-medio);font-size:12px">↳ ${it.det}</td><td class="num" style="padding:6px 12px;font-size:12px">${clp(it.monto)}</td></tr>`).join('')
       : '';
     html += `
       <div class="section" style="margin-bottom:14px">
         <div class="section-header" style="margin-bottom:10px;padding-bottom:8px">
           <div class="section-title">${mesLblF(mes.m)}</div>
-          <div style="font-size:16px;font-weight:800;color:var(--naranja)">${clp(mes.total || 0)}</div>
+          <div style="font-size:16px;font-weight:800;color:var(--naranja)">${clp(consumido)}</div>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;background:var(--crema);border-radius:8px;border:1px solid var(--gris-claro)">
+          <div style="font-size:13px">🍽️ <span style="color:var(--gris-medio)">Consumido:</span> <strong style="color:var(--naranja)">${clp(consumido)}</strong></div>
+          <div style="font-size:13px">💳 <span style="color:var(--gris-medio)">Cobrado:</span> <strong>${clp(cobrado)}</strong></div>
+          <div style="font-size:13px">⚖️ <span style="color:var(--gris-medio)">Diferencial:</span> <strong style="color:${difColor}">${difSign}${clp(diferencial)}</strong></div>
         </div>
         ${items.length ? `<div class="table-wrap"><table>
           <tbody>${itemsList}</tbody>
-          <tfoot><tr><td style="padding:8px 12px;font-weight:700">Total</td><td class="num" style="padding:8px 12px;font-weight:700">${clp(mes.total || 0)}</td></tr></tfoot>
-        </table></div>` : '<p style="color:#bbb;padding:10px;font-size:12px">Sin detalle de Ã­tems.</p>'}
+          <tfoot><tr><td style="padding:8px 12px;font-weight:700">Total comandas</td><td class="num" style="padding:8px 12px;font-weight:700">${clp(consumido)}</td></tr></tfoot>
+        </table></div>` : '<p style="color:#bbb;padding:10px;font-size:12px">Sin detalle de ítems registrado.</p>'}
       </div>`;
   });
   $('workerConsumoBody').innerHTML = html;
@@ -1524,29 +1561,124 @@ function initWorkerConsumo(nrut) {
 function renderConsumoAdmin() {
   const mes = $('consumoMesFiltro').value;
   const consumo = APPDATA.consumo || {};
+  const workers = APPDATA.workers || {};
   const entries = Object.entries(consumo);
-  let rows = '', total = 0, n = 0;
-  entries.sort((a,b) => (a[1].n||'').localeCompare(b[1].n||'')).forEach(([rut, c], i) => {
+  let rows = '', totalConsumo = 0, totalCobrado = 0, n = 0;
+  entries.sort((a,b) => (a[1].n||'').localeCompare(b[1].n||'')).forEach(([rut, c]) => {
     const mesData = mes
       ? (c.h || []).find(h => h.m === mes)
       : (c.h || []).reduce((acc, h) => ({ total: (acc.total||0) + (h.total||0), items: [...(acc.items||[]), ...(h.items||[])] }), {});
     if (!mesData || !mesData.total) return;
-    n++; total += mesData.total;
-    const detalle = (mesData.items || []).map(it => it.det).join(', ') || 'â';
+
+    const nrut = normRut(rut);
+    let workerH = [];
+    for (const [wid, w] of Object.entries(workers)) {
+      if (normRut(wid) === nrut) { workerH = w.h || []; break; }
+    }
+    const cobrado = mes
+      ? (workerH.find(h => h.m === mes)?.c || 0)
+      : workerH.reduce((a, h) => a + (h.c || 0), 0);
+
+    const consumido = mesData.total || 0;
+    const diferencial = consumido - cobrado;
+    const difColor = diferencial > 0 ? 'var(--rojo-err)' : diferencial < 0 ? 'var(--verde)' : 'var(--gris-medio)';
+    const difSign = diferencial > 0 ? '+' : '';
+
+    n++; totalConsumo += consumido; totalCobrado += cobrado;
+    const detalle = (mesData.items || []).map(it => it.det).join(', ') || '—';
+    const rutDisp = rut.replace(/_/g,'-');
+    const nomSafe = (c.n||'').replace(/'/g,"\'");
     rows += `<tr>
       <td>${n}</td><td><strong>${c.n}</strong></td>
-      <td style="font-size:11px;color:var(--gris-medio)">${rut.replace(/_/g,'-')}</td>
-      <td style="font-size:12px;color:var(--gris-medio);max-width:260px;white-space:normal">${detalle}</td>
-      <td class="num" style="color:var(--naranja);font-weight:700">${clp(mesData.total)}</td>
+      <td style="font-size:11px;color:var(--gris-medio)">${rutDisp}</td>
+      <td style="font-size:12px;color:var(--gris-medio);max-width:180px;white-space:normal">${detalle}</td>
+      <td class="num" style="color:var(--naranja);font-weight:700">${clp(consumido)}</td>
+      <td class="num">${clp(cobrado)}</td>
+      <td class="num" style="color:${difColor};font-weight:700">${difSign}${clp(diferencial)}</td>
+      <td style="text-align:center"><button class="btn-sec" style="font-size:11px;padding:4px 10px" onclick="verComandasAdmin('${rut}','${nomSafe}')">📋 Ver</button></td>
     </tr>`;
   });
+
+  const totalDif = totalConsumo - totalCobrado;
+  const totalDifColor = totalDif > 0 ? 'var(--rojo-err)' : totalDif < 0 ? 'var(--verde)' : 'var(--gris-medio)';
+  const totalDifSign = totalDif > 0 ? '+' : '';
+
   $('consumoAdminCards').innerHTML = `
-    <div class="card"><div class="card-icon naranja">ð¥</div>
+    <div class="card"><div class="card-icon naranja">👥</div>
       <div class="card-label">Trabajadores</div><div class="card-value">${n}</div></div>
-    <div class="card"><div class="card-icon naranja">ð½ï¸</div>
-      <div class="card-label">Total Consumo</div><div class="card-value">${clp(total)}</div></div>`;
-  $('consumoAdminTbody').innerHTML = rows || `<tr><td colspan="5" style="text-align:center;color:#bbb;padding:20px">${mes ? 'Sin consumo para ese mes.' : 'Sin registros de consumo.'}</td></tr>`;
-  $('consumoAdminFoot').innerHTML = n ? `<tr><td colspan="4"><strong>TOTAL</strong></td><td class="num">${clp(total)}</td></tr>` : '';
+    <div class="card"><div class="card-icon naranja">🍽️</div>
+      <div class="card-label">Total Consumido</div><div class="card-value">${clp(totalConsumo)}</div></div>
+    <div class="card"><div class="card-icon negro">💳</div>
+      <div class="card-label">Total Cobrado</div><div class="card-value">${clp(totalCobrado)}</div></div>
+    <div class="card"><div class="card-icon negro">⚖️</div>
+      <div class="card-label">Diferencial</div><div class="card-value" style="color:${totalDifColor}">${totalDifSign}${clp(totalDif)}</div></div>`;
+  $('consumoAdminTbody').innerHTML = rows || `<tr><td colspan="8" style="text-align:center;color:#bbb;padding:20px">${mes ? 'Sin consumo para ese mes.' : 'Sin registros de consumo.'}</td></tr>`;
+  $('consumoAdminFoot').innerHTML = n ? `<tr>
+    <td colspan="4"><strong>TOTAL</strong></td>
+    <td class="num">${clp(totalConsumo)}</td>
+    <td class="num">${clp(totalCobrado)}</td>
+    <td class="num" style="color:${totalDifColor};font-weight:700">${totalDifSign}${clp(totalDif)}</td>
+    <td></td>
+  </tr>` : '';
+  $('panelComandasAdmin').style.display = 'none';
+}
+
+// ===== VER COMANDAS ADMIN =====
+function verComandasAdmin(rut, nombre) {
+  const consumo = APPDATA.consumo || {};
+  let cdata = null;
+  for (const [id, c] of Object.entries(consumo)) {
+    if (id === rut) { cdata = c; break; }
+  }
+  const panel = $('panelComandasAdmin');
+  $('panelComandasTitle').textContent = 'Comandas — ' + nombre;
+  if (!cdata || !cdata.h || !cdata.h.length) {
+    $('panelComandasBody').innerHTML = '<p style="color:var(--gris-medio);padding:20px;text-align:center">Sin registros de comandas.</p>';
+  } else {
+    const nrut = normRut(rut);
+    let workerH = [];
+    for (const [wid, w] of Object.entries(APPDATA.workers || {})) {
+      if (normRut(wid) === nrut) { workerH = w.h || []; break; }
+    }
+    const mesFiltro = $('consumoMesFiltro').value;
+    const historial = mesFiltro
+      ? cdata.h.filter(h => h.m === mesFiltro)
+      : cdata.h.slice().reverse();
+    let html = '';
+    historial.forEach(mes => {
+      const items = mes.items || [];
+      const cobrado = (workerH.find(wh => wh.m === mes.m)?.c || 0);
+      const consumido = mes.total || 0;
+      const diferencial = consumido - cobrado;
+      const difColor = diferencial > 0 ? 'var(--rojo-err)' : diferencial < 0 ? 'var(--verde)' : 'var(--gris-medio)';
+      const difSign = diferencial > 0 ? '+' : '';
+      html += `
+        <div style="margin-bottom:14px;padding:14px;background:var(--crema);border-radius:10px;border:1px solid var(--gris-claro)">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+            <strong style="font-size:14px">${mesLblF(mes.m)}</strong>
+            <div style="display:flex;gap:16px;font-size:12px;flex-wrap:wrap">
+              <span>Consumido: <strong style="color:var(--naranja)">${clp(consumido)}</strong></span>
+              <span>Cobrado: <strong>${clp(cobrado)}</strong></span>
+              <span>Diferencial: <strong style="color:${difColor}">${difSign}${clp(diferencial)}</strong></span>
+            </div>
+          </div>
+          ${items.length ? `<div class="table-wrap"><table>
+            <tbody>${items.map((it,i) => `<tr>
+              <td style="padding:5px 10px;font-size:12px;color:var(--gris-medio);width:30px">${i+1}</td>
+              <td style="padding:5px 10px;font-size:12px">${it.det}</td>
+              <td class="num" style="padding:5px 10px;font-size:12px">${clp(it.monto)}</td>
+            </tr>`).join('')}</tbody>
+            <tfoot><tr>
+              <td colspan="2" style="padding:7px 10px;font-weight:700;font-size:12px">Total</td>
+              <td class="num" style="padding:7px 10px;font-weight:700;color:var(--naranja)">${clp(consumido)}</td>
+            </tr></tfoot>
+          </table></div>` : '<p style="font-size:12px;color:#bbb;padding:4px 0">Sin detalle de comandas registrado.</p>'}
+        </div>`;
+    });
+    $('panelComandasBody').innerHTML = html || '<p style="color:var(--gris-medio);padding:20px;text-align:center">Sin registros para el período.</p>';
+  }
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Populate worker selector in manual form
