@@ -529,7 +529,7 @@ tfoot td{font-weight:700;padding:10px 13px}
           <div class="table-wrap">
             <table>
               <thead><tr>
-                <th>#</th><th>Trabajador</th><th>RUT</th><th>Detalle</th><th>Consumido</th><th>Cobrado</th><th>Diferencial</th><th></th>
+                <th>#</th><th>Trabajador</th><th>RUT</th><th>Detalle</th><th>Consumido</th><th>Cobrado</th><th>Saldo</th><th></th>
               </tr></thead>
               <tbody id="consumoAdminTbody"></tbody>
               <tfoot id="consumoAdminFoot"></tfoot>
@@ -1503,8 +1503,8 @@ function initWorkerConsumo(nrut) {
   const h = cdata.h;
   const totalConsumo = h.reduce((a, x) => a + (x.total || 0), 0);
   const totalCobrado = workerH.reduce((a, x) => a + (x.c || 0), 0);
-  const totalDif = totalConsumo - totalCobrado;
-  const totalDifColor = totalDif > 0 ? 'var(--rojo-err)' : totalDif < 0 ? 'var(--verde)' : 'var(--gris-medio)';
+  const totalDif = totalCobrado - totalConsumo;
+  const totalDifColor = totalDif > 0 ? 'var(--verde)' : totalDif < 0 ? 'var(--rojo-err)' : 'var(--gris-medio)';
   const totalDifSign = totalDif > 0 ? '+' : '';
   const ultimoMes = h[h.length - 1];
 
@@ -1518,9 +1518,9 @@ function initWorkerConsumo(nrut) {
       <div class="card-value">${clp(totalCobrado)}</div>
       <div class="card-sub">Descontado de propinas</div></div>
     <div class="card"><div class="card-icon negro">⚖️</div>
-      <div class="card-label">Diferencial</div>
+      <div class="card-label">Saldo</div>
       <div class="card-value" style="color:${totalDifColor}">${totalDifSign}${clp(totalDif)}</div>
-      <div class="card-sub">${totalDif > 0 ? 'Pendiente por cobrar' : totalDif < 0 ? 'A tu favor' : 'Sin diferencia'}</div></div>
+      <div class="card-sub">${totalDif > 0 ? 'A tu favor' : totalDif < 0 ? 'Pendiente por cobrar' : 'Sin saldo'}</div></div>
     <div class="card"><div class="card-icon negro">🗓</div>
       <div class="card-label">Meses Registrados</div>
       <div class="card-value">${h.length}</div>
@@ -1531,9 +1531,9 @@ function initWorkerConsumo(nrut) {
     const items = mes.items || [];
     const cobrado = (workerH.find(wh => wh.m === mes.m)?.c || 0);
     const consumido = mes.total || 0;
-    const diferencial = consumido - cobrado;
-    const difColor = diferencial > 0 ? 'var(--rojo-err)' : diferencial < 0 ? 'var(--verde)' : 'var(--gris-medio)';
-    const difSign = diferencial > 0 ? '+' : '';
+    const saldo = cobrado - consumido;
+    const difColor = saldo > 0 ? 'var(--verde)' : saldo < 0 ? 'var(--rojo-err)' : 'var(--gris-medio)';
+    const difSign = saldo > 0 ? '+' : '';
     const itemsList = items.length
       ? items.map(it => `<tr><td style="padding:6px 12px;color:var(--gris-medio);font-size:12px">↳ ${it.det}</td><td class="num" style="padding:6px 12px;font-size:12px">${clp(it.monto)}</td></tr>`).join('')
       : '';
@@ -1546,7 +1546,7 @@ function initWorkerConsumo(nrut) {
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;background:var(--crema);border-radius:8px;border:1px solid var(--gris-claro)">
           <div style="font-size:13px">🍽️ <span style="color:var(--gris-medio)">Consumido:</span> <strong style="color:var(--naranja)">${clp(consumido)}</strong></div>
           <div style="font-size:13px">💳 <span style="color:var(--gris-medio)">Cobrado:</span> <strong>${clp(cobrado)}</strong></div>
-          <div style="font-size:13px">⚖️ <span style="color:var(--gris-medio)">Diferencial:</span> <strong style="color:${difColor}">${difSign}${clp(diferencial)}</strong></div>
+          <div style="font-size:13px">⚖️ <span style="color:var(--gris-medio)">Saldo:</span> <strong style="color:${difColor}">${difSign}${clp(saldo)}</strong></div>
         </div>
         ${items.length ? `<div class="table-wrap"><table>
           <tbody>${itemsList}</tbody>
@@ -1580,9 +1580,9 @@ function renderConsumoAdmin() {
       : workerH.reduce((a, h) => a + (h.c || 0), 0);
 
     const consumido = mesData.total || 0;
-    const diferencial = consumido - cobrado;
-    const difColor = diferencial > 0 ? 'var(--rojo-err)' : diferencial < 0 ? 'var(--verde)' : 'var(--gris-medio)';
-    const difSign = diferencial > 0 ? '+' : '';
+    const saldo = cobrado - consumido;
+    const difColor = saldo > 0 ? 'var(--verde)' : saldo < 0 ? 'var(--rojo-err)' : 'var(--gris-medio)';
+    const difSign = saldo > 0 ? '+' : '';
 
     n++; totalConsumo += consumido; totalCobrado += cobrado;
     const detalle = (mesData.items || []).map(it => it.det).join(', ') || '—';
@@ -1594,13 +1594,13 @@ function renderConsumoAdmin() {
       <td style="font-size:12px;color:var(--gris-medio);max-width:180px;white-space:normal">${detalle}</td>
       <td class="num" style="color:var(--naranja);font-weight:700">${clp(consumido)}</td>
       <td class="num">${clp(cobrado)}</td>
-      <td class="num" style="color:${difColor};font-weight:700">${difSign}${clp(diferencial)}</td>
+      <td class="num" style="color:${difColor};font-weight:700">${difSign}${clp(saldo)}</td>
       <td style="text-align:center"><button class="btn-sec" style="font-size:11px;padding:4px 10px" onclick="verComandasAdmin('${rut}','${nomSafe}')">📋 Ver</button></td>
     </tr>`;
   });
 
-  const totalDif = totalConsumo - totalCobrado;
-  const totalDifColor = totalDif > 0 ? 'var(--rojo-err)' : totalDif < 0 ? 'var(--verde)' : 'var(--gris-medio)';
+  const totalDif = totalCobrado - totalConsumo;
+  const totalDifColor = totalDif > 0 ? 'var(--verde)' : totalDif < 0 ? 'var(--rojo-err)' : 'var(--gris-medio)';
   const totalDifSign = totalDif > 0 ? '+' : '';
 
   $('consumoAdminCards').innerHTML = `
@@ -1611,7 +1611,7 @@ function renderConsumoAdmin() {
     <div class="card"><div class="card-icon negro">💳</div>
       <div class="card-label">Total Cobrado</div><div class="card-value">${clp(totalCobrado)}</div></div>
     <div class="card"><div class="card-icon negro">⚖️</div>
-      <div class="card-label">Diferencial</div><div class="card-value" style="color:${totalDifColor}">${totalDifSign}${clp(totalDif)}</div></div>`;
+      <div class="card-label">Saldo</div><div class="card-value" style="color:${totalDifColor}">${totalDifSign}${clp(totalDif)}</div></div>`;
   $('consumoAdminTbody').innerHTML = rows || `<tr><td colspan="8" style="text-align:center;color:#bbb;padding:20px">${mes ? 'Sin consumo para ese mes.' : 'Sin registros de consumo.'}</td></tr>`;
   $('consumoAdminFoot').innerHTML = n ? `<tr>
     <td colspan="4"><strong>TOTAL</strong></td>
@@ -1649,9 +1649,9 @@ function verComandasAdmin(rut, nombre) {
       const items = mes.items || [];
       const cobrado = (workerH.find(wh => wh.m === mes.m)?.c || 0);
       const consumido = mes.total || 0;
-      const diferencial = consumido - cobrado;
-      const difColor = diferencial > 0 ? 'var(--rojo-err)' : diferencial < 0 ? 'var(--verde)' : 'var(--gris-medio)';
-      const difSign = diferencial > 0 ? '+' : '';
+      const saldo = cobrado - consumido;
+      const difColor = saldo > 0 ? 'var(--verde)' : saldo < 0 ? 'var(--rojo-err)' : 'var(--gris-medio)';
+      const difSign = saldo > 0 ? '+' : '';
       html += `
         <div style="margin-bottom:14px;padding:14px;background:var(--crema);border-radius:10px;border:1px solid var(--gris-claro)">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
@@ -1659,7 +1659,7 @@ function verComandasAdmin(rut, nombre) {
             <div style="display:flex;gap:16px;font-size:12px;flex-wrap:wrap">
               <span>Consumido: <strong style="color:var(--naranja)">${clp(consumido)}</strong></span>
               <span>Cobrado: <strong>${clp(cobrado)}</strong></span>
-              <span>Diferencial: <strong style="color:${difColor}">${difSign}${clp(diferencial)}</strong></span>
+              <span>Saldo: <strong style="color:${difColor}">${difSign}${clp(saldo)}</strong></span>
             </div>
           </div>
           ${items.length ? `<div class="table-wrap"><table>
