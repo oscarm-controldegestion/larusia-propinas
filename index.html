@@ -286,17 +286,17 @@ body{background:#fff}
     </div>
     <div class="form-group">
       <label>Contraseña</label>
-      <input id="inputPass" type="password" placeholder="â¢â¢â¢â¢â¢â¢â¢â¢" autocomplete="current-password">
+      <input id="inputPass" type="password" placeholder="••••••••" autocomplete="current-password">
     </div>
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
-    <div id="loginError" class="login-error">â RUT o contraseña incorrectos.</div>
+    <div id="loginError" class="login-error">❌ RUT o contraseña incorrectos.</div>
   </div>
 </div>
 
 <!-- MODAL CAMBIAR CLAVE -->
 <div id="modalPass" class="modal-overlay">
   <div class="modal-box">
-    <h3>ð Cambia tu Contraseña</h3>
+    <h3>🔐 Cambia tu Contraseña</h3>
     <p id="modalPassMsg">Es tu primer inicio de sesión. Por seguridad, debes crear una contraseña personal.</p>
     <div class="form-group">
       <label>Nueva Contraseña</label>
@@ -349,7 +349,7 @@ body{background:#fff}
     </div>
     <div class="navbar-user">
       <span id="navName" style="font-size:12px"></span>
-      <button class="btn-nav" onclick="showChangePass()">ð Clave</button>
+      <button class="btn-nav" onclick="showChangePass()">🔑 Clave</button>
       <button class="btn-nav" onclick="doLogout()">Salir</button>
     </div>
   </nav>
@@ -363,8 +363,8 @@ body{background:#fff}
       </div>
       <!-- Worker tabs -->
       <div class="tabs">
-        <button class="tab active" onclick="workerTab('propinas',this)">ð° Propinas</button>
-        <button class="tab" onclick="workerTab('consumo',this)">ð½ï¸ Consumo Mensual</button>
+        <button class="tab active" onclick="workerTab('propinas',this)">💰 Propinas</button>
+        <button class="tab" onclick="workerTab('consumo',this)">🍽️ Consumo Mensual</button>
       </div>
 
       <!-- TAB PROPINAS -->
@@ -374,8 +374,8 @@ body{background:#fff}
           <div class="section-header">
             <div class="section-title">Detalle Mensual</div>
             <div class="btns-row">
-              <button class="btn-excel" onclick="exportWorkerExcel()">ð¥ Exportar Excel</button>
-              <button class="btn-export" onclick="window.print()">ð¨ Imprimir</button>
+              <button class="btn-excel" onclick="exportWorkerExcel()">📥 Exportar Excel</button>
+              <button class="btn-export" onclick="window.print()">🖨 Imprimir</button>
             </div>
           </div>
           <div id="workerAlert"></div>
@@ -423,13 +423,13 @@ body{background:#fff}
         <p>Informes de propinas del personal</p>
       </div>
       <div class="tabs">
-        <button class="tab active" onclick="adminTab('resumen',this)">ð Resumen</button>
-        <button class="tab" onclick="adminTab('mensual',this)">ð Por Mes</button>
-        <button class="tab" onclick="adminTab('trabajadores',this)">ð¥ Trabajadores</button>
-        <button class="tab" onclick="adminTab('claves',this)">ð Contraseñas</button>
-        <button class="tab" onclick="adminTab('consumo',this)" style="color:#c87941;font-weight:800">ð½ï¸ Consumo</button>
-        <button class="tab" onclick="adminTab('gestion',this)" style="color:#0969da;font-weight:800">âï¸ Gestión</button>
-        <button class="tab" onclick="adminTab('importar',this)" style="color:#1a6b3c;font-weight:800">ð¤ Importar</button>
+        <button class="tab active" onclick="adminTab('resumen',this)">📊 Resumen</button>
+        <button class="tab" onclick="adminTab('mensual',this)">📅 Por Mes</button>
+        <button class="tab" onclick="adminTab('trabajadores',this)">👥 Trabajadores</button>
+        <button class="tab" onclick="adminTab('claves',this)">🔑 Contraseñas</button>
+        <button class="tab" onclick="adminTab('consumo',this)" style="color:#c87941;font-weight:800">🍽️ Consumo</button>
+        <button class="tab" onclick="adminTab('gestion',this)" style="color:#0969da;font-weight:800">⚙️ Gestión</button>
+        <button class="tab" onclick="adminTab('importar',this)" style="color:#1a6b3c;font-weight:800">📤 Importar</button>
       </div>
 
       <!-- RESUMEN -->
@@ -439,8 +439,8 @@ body{background:#fff}
           <div class="section-header">
             <div class="section-title">Resumen por Mes</div>
             <div class="btns-row">
-              <button class="btn-excel" onclick="exportAdminExcelResumen()">ð¥ Exportar Excel</button>
-              <button class="btn-export" onclick="window.print()">ð¨ Imprimir</button>
+              <button class="btn-excel" onclick="exportAdminExcelResumen()">📥 Exportar Excel</button>
+              <button class="btn-export" onclick="window.print()">🖨 Imprimir</button>
             </div>
           </div>
           <div class="table-wrap">
@@ -462,8 +462,8 @@ body{background:#fff}
           <div class="section-header">
             <div class="section-title" id="mensualTitle">Informe Mensual</div>
             <div class="btns-row">
-              <button class="btn-excel" onclick="exportMensualExcel()">ð¥ Exportar Excel</button>
-              <button class="btn-export" onclick="window.print()">ð¨ Imprimir</button>
+              <button class="btn-excel" onclick="exportMensualExcel()">📥 Exportar Excel</button>
+              <button class="btn-export" onclick="window.print()">🖨 Imprimir</button>
             </div>
           </div>
           <div class="month-filter" id="monthFilter"></div>
@@ -486,10 +486,10 @@ body{background:#fff}
         <div class="section">
           <div class="section-header">
             <div class="section-title">Buscar Trabajador</div>
-            <button class="btn-excel" onclick="exportHistoricoExcel()">ð¥ Exportar Excel Histórico</button>
+            <button class="btn-excel" onclick="exportHistoricoExcel()">📥 Exportar Excel Histórico</button>
           </div>
           <div class="search-bar">
-            <input type="text" id="workerSearch" placeholder="ð  Buscar por nombre o RUT..." oninput="filterWorkers()">
+            <input type="text" id="workerSearch" placeholder="🔍  Buscar por nombre o RUT..." oninput="filterWorkers()">
           </div>
           <div id="workersList" class="workers-list"></div>
         </div>
@@ -498,9 +498,9 @@ body{background:#fff}
             <div class="section-header">
               <div class="section-title" id="workerDetailTitle">Detalle</div>
               <div class="btns-row">
-                <button class="btn-sec" onclick="$('workerDetail').style.display='none'">â Volver</button>
-                <button class="btn-excel" onclick="exportWorkerExcelAdmin(currentDetailRut)">ð¥ Excel</button>
-                <button class="btn-export" onclick="window.print()">ð¨ Imprimir</button>
+                <button class="btn-sec" onclick="$('workerDetail').style.display='none'">← Volver</button>
+                <button class="btn-excel" onclick="exportWorkerExcelAdmin(currentDetailRut)">📥 Excel</button>
+                <button class="btn-export" onclick="window.print()">🖨 Imprimir</button>
               </div>
             </div>
             <div id="workerDetailCards" class="cards-grid" style="margin-bottom:14px"></div>
@@ -526,7 +526,7 @@ body{background:#fff}
           <div class="section-header">
             <div class="section-title">Consumo Mensual por Trabajador</div>
             <div class="btns-row">
-              <button class="btn-excel" onclick="exportConsumoExcel()">ð¥ Exportar Excel</button>
+              <button class="btn-excel" onclick="exportConsumoExcel()">📥 Exportar Excel</button>
             </div>
           </div>
           <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px">
@@ -565,17 +565,17 @@ body{background:#fff}
             <div class="section-title">Importar Nómina de Consumo</div>
           </div>
           <div class="import-warn">
-            ð <strong>Formato:</strong> RUT · Nombre · Mes · Detalle · Monto â Una fila por ítem de consumo.
+            📋 <strong>Formato:</strong> RUT · Nombre · Mes · Detalle · Monto — Una fila por ítem de consumo.
           </div>
           <div id="consumoImportStep1">
             <div class="import-zone" onclick="document.getElementById('consumoFileInput').click()">
-              <strong>ð½ï¸</strong>
+              <strong>🍽️</strong>
               <p>Arrastra tu nómina de consumo aquí o haz clic para seleccionar</p>
               <p style="font-size:11px;color:#bbb">Archivos .xlsx o .xls</p>
             </div>
             <input type="file" id="consumoFileInput" accept=".xlsx,.xls" style="display:none" onchange="handleConsumoFile(this)">
             <div style="text-align:center;margin-top:14px">
-              <button class="btn-plantilla" onclick="downloadPlantillaConsumo()">â¬ï¸ Descargar Plantilla Consumo</button>
+              <button class="btn-plantilla" onclick="downloadPlantillaConsumo()">⬇️ Descargar Plantilla Consumo</button>
             </div>
           </div>
           <div id="consumoImportStep2" style="display:none">
@@ -584,8 +584,8 @@ body{background:#fff}
             <div class="progress-bar" id="consumoProgress"><div class="progress-fill" id="consumoProgressFill"></div></div>
             <div class="import-ok" id="consumoImportOk"></div>
             <div class="import-footer">
-              <button class="btn-import-cancel" onclick="resetConsumoImport()">â Volver</button>
-              <button class="btn-import-confirm" id="btnConfirmConsumo" onclick="confirmarConsumoImport()">â Importar Consumo</button>
+              <button class="btn-import-cancel" onclick="resetConsumoImport()">← Volver</button>
+              <button class="btn-import-confirm" id="btnConfirmConsumo" onclick="confirmarConsumoImport()">✅ Importar Consumo</button>
             </div>
           </div>
         </div>
@@ -599,7 +599,7 @@ body{background:#fff}
             <div style="flex:1;min-width:160px">
               <label style="font-size:11px;color:var(--gris-medio);font-weight:600;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px">Trabajador</label>
               <select id="consumoManualWorker" style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;background:var(--crema);outline:none">
-                <option value="">â Seleccionar â</option>
+                <option value="">— Seleccionar —</option>
               </select>
             </div>
             <div style="flex:0;min-width:150px">
@@ -611,18 +611,18 @@ body{background:#fff}
             <div class="consumo-item-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
               <input type="text" placeholder="Descripción (ej: Almuerzo)" style="flex:2;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;outline:none;background:var(--crema)">
               <input type="number" placeholder="Monto $" min="0" style="flex:1;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;outline:none;background:var(--crema);text-align:right">
-              <button onclick="quitarItemConsumo(this)" style="background:none;border:none;color:var(--rojo-err);cursor:pointer;font-size:18px;padding:4px">â</button>
+              <button onclick="quitarItemConsumo(this)" style="background:none;border:none;color:var(--rojo-err);cursor:pointer;font-size:18px;padding:4px">✕</button>
             </div>
           </div>
           <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
             <button class="btn-sec" onclick="agregarItemConsumo()">+ Agregar ítem</button>
-            <button class="btn-excel" onclick="guardarConsumoManual()">ð¾ Guardar Consumo</button>
+            <button class="btn-excel" onclick="guardarConsumoManual()">💾 Guardar Consumo</button>
           </div>
           <div id="consumoManualMsg" style="margin-top:12px"></div>
         </div>
       </div>
 
-      <!-- GESTIÃN -->
+      <!-- GESTIÓN -->
       <div id="tabGestion" class="tab-content">
 
         <!-- Agregar / editar trabajador -->
@@ -634,7 +634,7 @@ body{background:#fff}
           <div class="table-wrap">
             <table id="gestionWorkersTable">
               <thead><tr>
-                <th>Nombre</th><th>RUT</th><th>Meses</th><th>Ãltima Propina</th><th>Acciones</th>
+                <th>Nombre</th><th>RUT</th><th>Meses</th><th>Última Propina</th><th>Acciones</th>
               </tr></thead>
               <tbody id="gestionWorkersTbody"></tbody>
             </table>
@@ -668,7 +668,7 @@ body{background:#fff}
             </div>
             <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap">
               <button class="btn-sec" onclick="agregarFilaMes()">+ Agregar Trabajador al Mes</button>
-              <button class="btn-excel" onclick="guardarMes()" id="btnGuardarMes">ð¾ Guardar en Firebase</button>
+              <button class="btn-excel" onclick="guardarMes()" id="btnGuardarMes">💾 Guardar en Firebase</button>
             </div>
           </div>
         </div>
@@ -681,19 +681,19 @@ body{background:#fff}
             <div class="section-title">Importar Datos desde Excel</div>
           </div>
           <div class="import-warn">
-            ð <strong>Formato requerido:</strong> La planilla debe tener las columnas en este orden:
+            📋 <strong>Formato requerido:</strong> La planilla debe tener las columnas en este orden:
             <strong>RUT · Nombre · Mes · Propina Inicial · Fondo 6% · Propina Pagada</strong>
-            â Las filas de propina pagada <em>incluyen</em> cobertura de fondo (vacaciones/licencias).
+            — Las filas de propina pagada <em>incluyen</em> cobertura de fondo (vacaciones/licencias).
           </div>
           <div id="importStep1">
             <div class="import-zone" id="importDropZone" onclick="document.getElementById('importFileInput').click()">
-              <strong>ð</strong>
+              <strong>📊</strong>
               <p>Arrastra tu planilla Excel aquí o haz clic para seleccionar</p>
               <p style="font-size:11px;color:#bbb">Archivos .xlsx o .xls</p>
             </div>
             <input type="file" id="importFileInput" accept=".xlsx,.xls" style="display:none" onchange="handleImportFile(this)">
             <div style="text-align:center;margin-top:14px">
-              <button class="btn-plantilla" onclick="downloadPlantilla()">â¬ï¸ Descargar Plantilla Excel</button>
+              <button class="btn-plantilla" onclick="downloadPlantilla()">⬇️ Descargar Plantilla Excel</button>
             </div>
           </div>
           <div id="importStep2" style="display:none">
@@ -703,19 +703,19 @@ body{background:#fff}
             <div class="progress-bar" id="importProgress"><div class="progress-fill" id="importProgressFill"></div></div>
             <div class="import-ok" id="importOkMsg"></div>
             <div class="import-footer">
-              <button class="btn-import-cancel" onclick="resetImport()">â Volver</button>
-              <button class="btn-import-confirm" id="btnConfirmImport" onclick="confirmarImport()">â Importar a Firebase</button>
+              <button class="btn-import-cancel" onclick="resetImport()">← Volver</button>
+              <button class="btn-import-confirm" id="btnConfirmImport" onclick="confirmarImport()">✅ Importar a Firebase</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- CONTRASEÃAS -->
+      <!-- CONTRASEÑAS -->
       <div id="tabClaves" class="tab-content">
         <div class="section">
           <div class="section-header">
             <div class="section-title">Contraseñas de Trabajadores</div>
-            <button class="btn-sec" onclick="toggleAllPass()">ð Mostrar/Ocultar todas</button>
+            <button class="btn-sec" onclick="toggleAllPass()">👁 Mostrar/Ocultar todas</button>
           </div>
           <div class="alert-info">
             Las contraseñas se muestran siempre visibles para el administrador. Las marcadas <strong>Cambiada</strong> fueron modificadas por el trabajador. Las <strong>Default</strong> son las contraseñas iniciales (RUT sin puntos ni guión).
@@ -865,7 +865,7 @@ function saveNewPass(){
     db.ref('propinas/users/' + safeUid + '/changed').set(true);
     APPDATA.users[targetUid].password = p1;
     APPDATA.users[targetUid].changed = true;
-    ok.textContent='â Contraseña guardada correctamente.'; ok.style.display='block';
+    ok.textContent='✅ Contraseña guardada correctamente.'; ok.style.display='block';
     err.style.display='none';
     setTimeout(()=>{ $('modalPass').classList.remove('open'); if(pendingLogin){pendingLogin=null;startApp();} },1200);
   }).catch(e=>{ err.textContent='Error al guardar: '+e.message; err.style.display='block'; });
@@ -923,29 +923,29 @@ function initWorker(nrut){
   const totN=h.reduce((a,x)=>a+x.net,0),totC=h.reduce((a,x)=>a+x.c,0);
   const s=h.length?h[h.length-1].s:0;
   $('workerCards').innerHTML=`
-    <div class="card"><div class="card-icon negro">ð°</div>
+    <div class="card"><div class="card-icon negro">💰</div>
       <div class="card-label">Total Propinas</div><div class="card-value">${clp(totP)}</div>
       <div class="card-sub">Acumulado desde Oct 2025</div></div>
-    <div class="card"><div class="card-icon dorado">ð¦</div>
+    <div class="card"><div class="card-icon dorado">🏦</div>
       <div class="card-label">Retención 6%</div><div class="card-value">${clp(totR)}</div>
       <div class="card-sub">Ahorro acumulado</div></div>
-    <div class="card"><div class="card-icon verde">â</div>
+    <div class="card"><div class="card-icon verde">✅</div>
       <div class="card-label">Total Depositado</div><div class="card-value">${clp(totN)}</div>
-      <div class="card-sub">Neto pagado (propinas â 6%)</div></div>
-    ${totC>0?`<div class="card"><div class="card-icon naranja">ð¥</div>
+      <div class="card-sub">Neto pagado (propinas − 6%)</div></div>
+    ${totC>0?`<div class="card"><div class="card-icon naranja">🏥</div>
       <div class="card-label">Cobertura Usada</div><div class="card-value">${clp(totC)}</div>
       <div class="card-sub">Licencias y vacaciones</div></div>`:''}
-    <div class="card"><div class="card-icon ${s>=0?'dorado':'rojo'}">ð</div>
+    <div class="card"><div class="card-icon ${s>=0?'dorado':'rojo'}">📊</div>
       <div class="card-label">Saldo Fondo 6%</div>
       <div class="card-value ${s>=0?'positivo':'negativo'}">${clp(s)}</div>
       <div class="card-sub">${s>=0?'Disponible para cobertura':'Déficit a recuperar'}</div></div>`;
-  $('workerAlert').innerHTML=s<0?`<div class="alert-warn">â ï¸ Tu fondo del 6% tiene un déficit de <strong>${clp(Math.abs(s))}</strong>, que se compensará con futuras retenciones.</div>`:'';
+  $('workerAlert').innerHTML=s<0?`<div class="alert-warn">⚠️ Tu fondo del 6% tiene un déficit de <strong>${clp(Math.abs(s))}</strong>, que se compensará con futuras retenciones.</div>`:'';
   let rows='';
   h.forEach(x=>{
     rows+=`<tr><td class="mes">${mesLblF(x.m)}</td>
       <td class="num">${clp(x.p)}</td><td class="num">${clp(x.r)}</td>
       <td class="num">${clp(x.net)}</td>
-      <td class="num">${x.c>0?'<span class="badge badge-dorado">'+clp(x.c)+'</span>':'â'}</td>
+      <td class="num">${x.c>0?'<span class="badge badge-dorado">'+clp(x.c)+'</span>':'—'}</td>
       <td class="num">${clp(x.nf)}</td>
       <td class="num ${x.s>=0?'positivo':'negativo'}">${clp(x.s)}</td></tr>`;
   });
@@ -953,7 +953,7 @@ function initWorker(nrut){
   $('workerTableFoot').innerHTML=`<tr><td><strong>TOTAL</strong></td>
     <td class="num">${clp(totP)}</td><td class="num">${clp(totR)}</td>
     <td class="num">${clp(totN)}</td>
-    <td class="num">${totC>0?clp(totC):'â'}</td>
+    <td class="num">${totC>0?clp(totC):'—'}</td>
     <td class="num">${clp(totN+totC)}</td>
     <td class="num ${s>=0?'positivo':'negativo'}">${clp(s)}</td></tr>`;
 }
@@ -978,19 +978,19 @@ function initAdmin(){
   }
   const months=[...allMonths].sort();
   $('adminCards').innerHTML=`
-    <div class="card"><div class="card-icon negro">ð¥</div>
+    <div class="card"><div class="card-icon negro">👥</div>
       <div class="card-label">Trabajadores</div><div class="card-value">${nW}</div>
-      <div class="card-sub">Con datos oct 2025 â hoy</div></div>
-    <div class="card"><div class="card-icon negro">ð°</div>
+      <div class="card-sub">Con datos oct 2025 – hoy</div></div>
+    <div class="card"><div class="card-icon negro">💰</div>
       <div class="card-label">Total Propinas</div><div class="card-value">${clp(totP)}</div>
       <div class="card-sub">Acumulado todos los meses</div></div>
-    <div class="card"><div class="card-icon dorado">ð¦</div>
+    <div class="card"><div class="card-icon dorado">🏦</div>
       <div class="card-label">Total Retención 6%</div><div class="card-value">${clp(totR)}</div>
       <div class="card-sub">Fondo total acumulado</div></div>
-    <div class="card"><div class="card-icon verde">â</div>
+    <div class="card"><div class="card-icon verde">✅</div>
       <div class="card-label">Total Depositado</div><div class="card-value">${clp(totN)}</div>
       <div class="card-sub">Neto pagado a trabajadores</div></div>
-    <div class="card"><div class="card-icon naranja">ð¥</div>
+    <div class="card"><div class="card-icon naranja">🏥</div>
       <div class="card-label">Coberturas Usadas</div><div class="card-value">${clp(totC)}</div>
       <div class="card-sub">Licencias y vacaciones</div></div>`;
   let mRows='',mP=0,mR=0,mN=0,mC=0;
@@ -1004,7 +1004,7 @@ function initAdmin(){
     mRows+=`<tr><td class="mes">${mesLblF(m)}</td>
       <td class="num">${w}</td><td class="num">${clp(p)}</td>
       <td class="num">${clp(r)}</td><td class="num">${clp(n)}</td>
-      <td class="num">${c>0?clp(c):'â'}</td></tr>`;
+      <td class="num">${c>0?clp(c):'—'}</td></tr>`;
   });
   $('adminMonthTable').innerHTML=mRows;
   $('adminMonthFoot').innerHTML=`<tr><td><strong>TOTAL</strong></td><td></td>
@@ -1037,7 +1037,7 @@ function renderMensual(month){
     rows.push(`<tr><td>${i++}</td><td><strong>${w.n}</strong></td>
       <td class="num">${clp(h.p)}</td><td class="num">${clp(h.r)}</td>
       <td class="num">${clp(h.net)}</td>
-      <td class="num">${h.c>0?'<span class="badge badge-dorado">'+clp(h.c)+'</span>':'â'}</td>
+      <td class="num">${h.c>0?'<span class="badge badge-dorado">'+clp(h.c)+'</span>':'—'}</td>
       <td class="num">${clp(h.nf)}</td>
       <td class="num ${h.s>=0?'positivo':'negativo'}">${clp(h.s)}</td></tr>`);
   }
@@ -1045,7 +1045,7 @@ function renderMensual(month){
   $('mensualFoot').innerHTML=`<tr><td colspan="2"><strong>TOTAL (${i-1})</strong></td>
     <td class="num">${clp(tp)}</td><td class="num">${clp(tr2)}</td>
     <td class="num">${clp(tn)}</td>
-    <td class="num">${tc>0?clp(tc):'â'}</td>
+    <td class="num">${tc>0?clp(tc):'—'}</td>
     <td class="num">${clp(tn+tc)}</td><td></td></tr>`;
 }
 
@@ -1058,7 +1058,7 @@ function renderWorkersList(filter=''){
     const s=w.h[w.h.length-1].s;
     html+=`<div class="worker-card ${s>=0?'saldo-positivo':'saldo-negativo'}" onclick="showWorkerDetail('${rut}')">
       <h4>${w.n}</h4><p>RUT: ${w.rd} · ${w.h.length} meses</p>
-      <div class="saldo ${s>=0?'positivo':'negativo'}">${s>=0?'â':'â ï¸'} Saldo fondo: ${clp(s)}</div></div>`;
+      <div class="saldo ${s>=0?'positivo':'negativo'}">${s>=0?'✅':'⚠️'} Saldo fondo: ${clp(s)}</div></div>`;
   }
   $('workersList').innerHTML=html||'<p style="color:#888;padding:16px">Sin resultados.</p>';
 }
@@ -1068,18 +1068,18 @@ function showWorkerDetail(rut){
   currentDetailRut=rut;
   const w=APPDATA.workers[rut];if(!w)return;
   $('workerDetail').style.display='block';
-  $('workerDetailTitle').textContent=w.n+' â '+w.rd;
+  $('workerDetailTitle').textContent=w.n+' — '+w.rd;
   const totP=w.h.reduce((a,x)=>a+x.p,0),totR=w.h.reduce((a,x)=>a+x.r,0);
   const totN=w.h.reduce((a,x)=>a+x.net,0),totC=w.h.reduce((a,x)=>a+x.c,0);
   const s=w.h.length?w.h[w.h.length-1].s:0;
   $('workerDetailCards').innerHTML=`
-    <div class="card"><div class="card-icon negro">ð°</div>
+    <div class="card"><div class="card-icon negro">💰</div>
       <div class="card-label">Total Propinas</div><div class="card-value">${clp(totP)}</div></div>
-    <div class="card"><div class="card-icon dorado">ð¦</div>
+    <div class="card"><div class="card-icon dorado">🏦</div>
       <div class="card-label">Retención 6%</div><div class="card-value">${clp(totR)}</div></div>
-    <div class="card"><div class="card-icon verde">â</div>
+    <div class="card"><div class="card-icon verde">✅</div>
       <div class="card-label">Total Depositado</div><div class="card-value">${clp(totN)}</div></div>
-    <div class="card"><div class="card-icon ${s>=0?'dorado':'rojo'}">ð</div>
+    <div class="card"><div class="card-icon ${s>=0?'dorado':'rojo'}">📊</div>
       <div class="card-label">Saldo Fondo</div>
       <div class="card-value ${s>=0?'positivo':'negativo'}">${clp(s)}</div></div>`;
   let rows='';
@@ -1087,7 +1087,7 @@ function showWorkerDetail(rut){
     rows+=`<tr><td class="mes">${mesLblF(x.m)}</td>
       <td class="num">${clp(x.p)}</td><td class="num">${clp(x.r)}</td>
       <td class="num">${clp(x.net)}</td>
-      <td class="num">${x.c>0?clp(x.c):'â'}</td>
+      <td class="num">${x.c>0?clp(x.c):'—'}</td>
       <td class="num">${clp(x.nf)}</td>
       <td class="num ${x.s>=0?'positivo':'negativo'}">${clp(x.s)}</td></tr>`;
   });
@@ -1095,13 +1095,13 @@ function showWorkerDetail(rut){
   $('workerDetailFoot').innerHTML=`<tr><td><strong>TOTAL</strong></td>
     <td class="num">${clp(totP)}</td><td class="num">${clp(totR)}</td>
     <td class="num">${clp(totN)}</td>
-    <td class="num">${totC>0?clp(totC):'â'}</td>
+    <td class="num">${totC>0?clp(totC):'—'}</td>
     <td class="num">${clp(totN+totC)}</td>
     <td class="num ${s>=0?'positivo':'negativo'}">${clp(s)}</td></tr>`;
   setTimeout(()=>$('workerDetail').scrollIntoView({behavior:'smooth'}),100);
 }
 
-// ===== CONTRASEÃAS =====
+// ===== CONTRASEÑAS =====
 let showingAllPass=false;
 function renderClaves(){
   const workers=APPDATA.workers;
@@ -1111,7 +1111,7 @@ function renderClaves(){
     const nrut=normRut(rut);
     const u=APPDATA.users[rut];
     const changed=!!(u&&u.changed);
-    const pass=u?u.password:'â';
+    const pass=u?u.password:'—';
     rows+=`<tr>
       <td><strong>${w.n}</strong></td>
       <td style="font-size:12px;color:#666">${w.rd}</td>
@@ -1132,7 +1132,7 @@ function togglePass(nrut,pass,btn){
     cell.innerHTML=`<span class="pass-show" style="cursor:default">${pass}</span>`;
     btn.textContent='Ocultar';
   } else {
-    cell.innerHTML='<span class="pass-hidden">â¢â¢â¢â¢â¢â¢â¢â¢</span>';
+    cell.innerHTML='<span class="pass-hidden">••••••••</span>';
     btn.textContent='Ver';
   }
 }
@@ -1145,7 +1145,7 @@ function toggleAllPass(){
   for(const [rut,w] of Object.entries(workers)){
     const nrut=normRut(rut);
     const u=APPDATA.users[rut];
-    const pass=u?u.password:'â';
+    const pass=u?u.password:'—';
     const cell=$('pass_'+nrut);
     if(!cell)continue;
     const btn=cell.parentElement.querySelector('.pass-show[onclick^="togglePass"]');
@@ -1153,7 +1153,7 @@ function toggleAllPass(){
       cell.innerHTML=`<span class="pass-show" style="cursor:default">${pass}</span>`;
       if(btn)btn.textContent='Ocultar';
     } else {
-      cell.innerHTML='<span class="pass-hidden">â¢â¢â¢â¢â¢â¢â¢â¢</span>';
+      cell.innerHTML='<span class="pass-hidden">••••••••</span>';
       if(btn)btn.textContent='Ver';
     }
   }
@@ -1268,7 +1268,7 @@ function parseImportRows(rows) {
   const colPag  = header.findIndex(c => c.includes('pagada') || c.includes('neto') || c.includes('deposito'));
 
   if (colRut < 0 || colNom < 0 || colMes < 0) {
-    alert('â No se encontraron las columnas requeridas (RUT, Nombre, Mes).\n\nDescarga la plantilla para ver el formato correcto.');
+    alert('❌ No se encontraron las columnas requeridas (RUT, Nombre, Mes).\n\nDescarga la plantilla para ver el formato correcto.');
     return;
   }
 
@@ -1310,7 +1310,7 @@ function renderImportPreview(parsed, errors) {
     ${bad ? `<div class="import-stat" style="background:#fff5f5"><div class="val" style="color:var(--rojo-err)">${bad}</div><div class="lbl">Errores</div></div>` : ''}`;
 
   if (bad) {
-    $('importWarnMsg').innerHTML = `â ï¸ ${bad} fila(s) tienen datos incompletos (marcadas en rojo) y se omitirán en la importación.`;
+    $('importWarnMsg').innerHTML = `⚠️ ${bad} fila(s) tienen datos incompletos (marcadas en rojo) y se omitirán en la importación.`;
     $('importWarnMsg').style.display = 'block';
   } else {
     $('importWarnMsg').style.display = 'none';
@@ -1325,17 +1325,17 @@ function renderImportPreview(parsed, errors) {
   parsed.forEach((r,i) => {
     const cls = r.ok ? '' : ' class="import-err-row"';
     const estado = r.ok
-      ? '<span style="color:var(--verde);font-weight:700">â OK</span>'
-      : '<span style="color:var(--rojo-err);font-weight:700">â Incompleto</span>';
-    const mesDisplay = r.mes ? mesLblF(r.mes) : `<span style="color:var(--rojo-err)">${r.mesRaw || 'â'}</span>`;
+      ? '<span style="color:var(--verde);font-weight:700">✓ OK</span>'
+      : '<span style="color:var(--rojo-err);font-weight:700">✗ Incompleto</span>';
+    const mesDisplay = r.mes ? mesLblF(r.mes) : `<span style="color:var(--rojo-err)">${r.mesRaw || '—'}</span>`;
     html += `<tr${cls}>
       <td>${r.row}</td>
-      <td>${r.rut || '<em style="color:#bbb">â</em>'}</td>
-      <td>${r.nom || '<em style="color:#bbb">â</em>'}</td>
+      <td>${r.rut || '<em style="color:#bbb">—</em>'}</td>
+      <td>${r.nom || '<em style="color:#bbb">—</em>'}</td>
       <td>${mesDisplay}</td>
-      <td class="num">${r.prop ? clp(r.prop) : 'â'}</td>
-      <td class="num">${r.fond ? clp(r.fond) : 'â'}</td>
-      <td class="num">${r.pag ? clp(r.pag) : 'â'}</td>
+      <td class="num">${r.prop ? clp(r.prop) : '—'}</td>
+      <td class="num">${r.fond ? clp(r.fond) : '—'}</td>
+      <td class="num">${r.pag ? clp(r.pag) : '—'}</td>
       <td>${estado}</td>
     </tr>`;
   });
@@ -1443,14 +1443,14 @@ async function confirmarImport() {
     APPDATA.users   = fd.users   || {};
     initAdmin();
 
-    $('importOkMsg').innerHTML = `â <strong>Importación exitosa.</strong> Se importaron ${validRows.length} registros para ${ruts.length} trabajadores.`;
+    $('importOkMsg').innerHTML = `✅ <strong>Importación exitosa.</strong> Se importaron ${validRows.length} registros para ${ruts.length} trabajadores.`;
     $('importOkMsg').style.display = 'block';
-    $('btnConfirmImport').textContent = 'â Importado';
+    $('btnConfirmImport').textContent = '✅ Importado';
     $('btnConfirmImport').style.background = 'var(--verde)';
   } catch(err) {
-    alert('â Error al guardar en Firebase: ' + err.message);
+    alert('❌ Error al guardar en Firebase: ' + err.message);
     $('btnConfirmImport').disabled = false;
-    $('btnConfirmImport').textContent = 'â Importar a Firebase';
+    $('btnConfirmImport').textContent = '✅ Importar a Firebase';
   }
 }
 
@@ -1697,7 +1697,7 @@ function populateConsumoWorkerSelect() {
   const sel = $('consumoManualWorker');
   const current = sel.value;
   const workers = APPDATA.workers;
-  sel.innerHTML = '<option value="">â Seleccionar â</option>';
+  sel.innerHTML = '<option value="">— Seleccionar —</option>';
   Object.entries(workers).sort((a,b)=>a[1].n?.localeCompare(b[1].n||'')).forEach(([rut,w]) => {
     const opt = document.createElement('option');
     opt.value = rut;
@@ -1714,7 +1714,7 @@ function agregarItemConsumo() {
   row.innerHTML = `
     <input type="text" placeholder="Descripción (ej: Almuerzo)" style="flex:2;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;outline:none;background:var(--crema)">
     <input type="number" placeholder="Monto $" min="0" style="flex:1;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;outline:none;background:var(--crema);text-align:right">
-    <button onclick="quitarItemConsumo(this)" style="background:none;border:none;color:var(--rojo-err);cursor:pointer;font-size:18px;padding:4px">â</button>`;
+    <button onclick="quitarItemConsumo(this)" style="background:none;border:none;color:var(--rojo-err);cursor:pointer;font-size:18px;padding:4px">✕</button>`;
   $('consumoManualItems').appendChild(row);
 }
 
@@ -1754,7 +1754,7 @@ async function guardarConsumoManual() {
     // Refresh APPDATA
     const fresh = await db.ref('propinas/consumo').once('value');
     APPDATA.consumo = fresh.val() || {};
-    msg.innerHTML = `<div style="background:#e8f5ec;color:var(--verde);padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600">â Consumo de ${mesLblF(mes)} guardado. Total: ${clp(total)}</div>`;
+    msg.innerHTML = `<div style="background:#e8f5ec;color:var(--verde);padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600">✅ Consumo de ${mesLblF(mes)} guardado. Total: ${clp(total)}</div>`;
     renderConsumoAdmin();
   } catch(e) {
     msg.innerHTML = `<span style="color:var(--rojo-err)">Error: ${e.message}</span>`;
@@ -1822,10 +1822,10 @@ function renderConsumoImportPreview(parsed) {
   let html = `<table><thead><tr><th>#</th><th>RUT</th><th>Nombre</th><th>Mes</th><th>Detalle</th><th>Monto</th><th>Estado</th></tr></thead><tbody>`;
   parsed.forEach(r => {
     const cls    = r.ok ? '' : ' class="import-err-row"';
-    const estado = r.ok ? '<span style="color:var(--verde);font-weight:700">â OK</span>' : '<span style="color:var(--rojo-err);font-weight:700">â</span>';
-    html += `<tr${cls}><td>${r.row}</td><td>${r.rut||'â'}</td><td>${r.nom||'â'}</td>
-      <td>${r.mes ? mesLblF(r.mes) : 'â'}</td><td>${r.det}</td>
-      <td class="num">${r.monto ? clp(r.monto) : 'â'}</td><td>${estado}</td></tr>`;
+    const estado = r.ok ? '<span style="color:var(--verde);font-weight:700">✓ OK</span>' : '<span style="color:var(--rojo-err);font-weight:700">✗</span>';
+    html += `<tr${cls}><td>${r.row}</td><td>${r.rut||'—'}</td><td>${r.nom||'—'}</td>
+      <td>${r.mes ? mesLblF(r.mes) : '—'}</td><td>${r.det}</td>
+      <td class="num">${r.monto ? clp(r.monto) : '—'}</td><td>${estado}</td></tr>`;
   });
   html += '</tbody></table>';
   $('consumoImportPreview').innerHTML = html;
@@ -1848,7 +1848,7 @@ async function confirmarConsumoImport() {
   $('btnConfirmConsumo').disabled = true;
   $('btnConfirmConsumo').textContent = 'Importando...';
   $('consumoProgress').style.display = 'block';
-  // Group by rut + mes â items
+  // Group by rut + mes → items
   const byRutMes = {};
   valid.forEach(r => {
     const key = r.rut + '|' + r.mes;
@@ -1886,14 +1886,14 @@ async function confirmarConsumoImport() {
     const fresh = await db.ref('propinas/consumo').once('value');
     APPDATA.consumo = fresh.val() || {};
     renderConsumoAdmin();
-    $('consumoImportOk').innerHTML = `â <strong>Importación exitosa.</strong> ${valid.length} ítems para ${ruts.size} trabajadores.`;
+    $('consumoImportOk').innerHTML = `✅ <strong>Importación exitosa.</strong> ${valid.length} ítems para ${ruts.size} trabajadores.`;
     $('consumoImportOk').style.display = 'block';
-    $('btnConfirmConsumo').textContent = 'â Importado';
+    $('btnConfirmConsumo').textContent = '✅ Importado';
     $('btnConfirmConsumo').style.background = 'var(--verde)';
   } catch(e) {
     alert('Error: ' + e.message);
     $('btnConfirmConsumo').disabled = false;
-    $('btnConfirmConsumo').textContent = 'â Importar Consumo';
+    $('btnConfirmConsumo').textContent = '✅ Importar Consumo';
   }
 }
 
@@ -1922,7 +1922,7 @@ function exportConsumoExcel() {
       if (h.items && h.items.length) {
         h.items.forEach(it => rows.push([rut.replace(/_/g,'-'), c.n, mesLblF(h.m), it.det, it.monto]));
       } else {
-        rows.push([rut.replace(/_/g,'-'), c.n, mesLblF(h.m), 'â', h.total||0]);
+        rows.push([rut.replace(/_/g,'-'), c.n, mesLblF(h.m), '—', h.total||0]);
       }
     });
   });
@@ -1932,7 +1932,7 @@ function exportConsumoExcel() {
   XLSX.writeFile(wb, 'consumo_larusia.xlsx');
 }
 
-// ===== GESTIÃN DE TRABAJADORES =====
+// ===== GESTIÓN DE TRABAJADORES =====
 
 let gestionMesData = []; // rows currently edited in the month table
 let gestionEditRut  = null; // rut being edited (null = add new)
@@ -1943,7 +1943,7 @@ function renderGestion() {
   const entries = Object.entries(workers).sort((a,b)=>a[1].n?.localeCompare(b[1].n||'')||0);
   entries.forEach(([rut, w]) => {
     const meses = w.h ? w.h.length : 0;
-    const ultima = w.h && w.h.length ? clp(w.h[w.h.length-1].p) : 'â';
+    const ultima = w.h && w.h.length ? clp(w.h[w.h.length-1].p) : '—';
     const safeRut = rut.replace(/_/g,'-');
     rows += `<tr>
       <td><strong>${w.n}</strong></td>
@@ -1952,9 +1952,9 @@ function renderGestion() {
       <td class="num">${ultima}</td>
       <td>
         <button class="btn-sec" style="font-size:11px;padding:4px 10px;margin-right:4px"
-          onclick="editarTrabajador('${rut}')">âï¸ Editar</button>
+          onclick="editarTrabajador('${rut}')">✏️ Editar</button>
         <button class="btn-sec" style="font-size:11px;padding:4px 10px;color:var(--rojo-err);border-color:var(--rojo-err)"
-          onclick="eliminarTrabajador('${rut}','${w.n}')">ð Eliminar</button>
+          onclick="eliminarTrabajador('${rut}','${w.n}')">🗑 Eliminar</button>
       </td>
     </tr>`;
   });
@@ -2041,7 +2041,7 @@ async function guardarTrabajador() {
     const d = snap.val() || {};
     APPDATA.workers = d.workers || {};
     APPDATA.users   = d.users   || {};
-    ok.textContent  = gestionEditRut ? 'â Trabajador actualizado.' : 'â Trabajador agregado con contraseña: ' + rut.replace(/[.\-]/g,'');
+    ok.textContent  = gestionEditRut ? '✅ Trabajador actualizado.' : '✅ Trabajador agregado con contraseña: ' + rut.replace(/[.\-]/g,'');
     ok.style.display= 'block';
     err.style.display='none';
     renderGestion();
@@ -2067,7 +2067,7 @@ async function eliminarTrabajador(rut, nombre) {
     APPDATA.users   = d.users   || {};
     renderGestion();
     initAdmin();
-    alert(`â ${nombre} eliminado correctamente.`);
+    alert(`✅ ${nombre} eliminado correctamente.`);
   } catch(e) {
     alert('Error al eliminar: ' + e.message);
   }
@@ -2212,12 +2212,12 @@ async function guardarMes() {
     initAdmin();
 
     $('gestionMesAlert').innerHTML = `<div style="background:#e8f5ec;color:var(--verde);padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600">
-      â Mes ${mesLblF(mes)} guardado para ${rowsToSave.length} trabajadores.</div>`;
-    $('btnGuardarMes').textContent = 'â Guardado';
+      ✅ Mes ${mesLblF(mes)} guardado para ${rowsToSave.length} trabajadores.</div>`;
+    $('btnGuardarMes').textContent = '✅ Guardado';
     $('btnGuardarMes').style.background = 'var(--verde)';
     setTimeout(()=>{
       $('btnGuardarMes').disabled = false;
-      $('btnGuardarMes').textContent = 'ð¾ Guardar en Firebase';
+      $('btnGuardarMes').textContent = '💾 Guardar en Firebase';
       $('btnGuardarMes').style.background = '';
       // Reload the month to show updated values
       cargarMesGestion();
@@ -2225,7 +2225,7 @@ async function guardarMes() {
   } catch(e) {
     alert('Error al guardar: ' + e.message);
     $('btnGuardarMes').disabled = false;
-    $('btnGuardarMes').textContent = 'ð¾ Guardar en Firebase';
+    $('btnGuardarMes').textContent = '💾 Guardar en Firebase';
   }
 }
 
@@ -2301,7 +2301,7 @@ function exportHistoricoExcel(){
     months.forEach(m=>{
       const h=w.h.find(x=>x.m===m);
       rows.push([w.n, w.rd, mesLblF(m),
-        h?h.p:0, h?h.r:0, h?h.net:0, h?h.c:0, h?h.nf:0, h?h.s:'â']);
+        h?h.p:0, h?h.r:0, h?h.net:0, h?h.c:0, h?h.nf:0, h?h.s:'—']);
     });
   }
   downloadCSV('historico_propinas_la_rusia.csv',rows,
