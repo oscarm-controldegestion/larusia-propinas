@@ -251,12 +251,11 @@ tfoot td{font-weight:700;padding:10px 13px}
   body{background:white}
 }
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    window.SUPABASE_URL = 'https://pyuzgwvnvejlqnpnlosu.supabase.co';
-    window.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5dXpnd3ZudmVqbHFucG5sb3N1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NDg5ODQsImV4cCI6MjA5MjEyNDk4NH0.mBlwyca_iMbOsPUARWyd6_KJsYi6NnpqM9b7fXWU38E';
-  </script>
-  <script src="supabase-firebase-shim.js"></script>
+  <!-- Firebase Realtime Database (plan gratuito Spark) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style id="white-theme-override">
@@ -280,8 +279,12 @@ body{background:#fff}
       <h2>Información Propinas y Consumos</h2>
     </div>
     <div class="divider"></div>
+    <div id="avisoMantencion" style="display:none;background:#fff8e1;border:1px solid #f0d79a;color:#7a5b12;padding:12px 14px;border-radius:8px;font-size:13px;line-height:1.5;margin-bottom:16px;text-align:left">
+      <strong>Aplicación en mantención</strong><br>
+      Estamos revisando la información de propinas y consumos. Vuelve a intentarlo en unos días.
+    </div>
     <div class="form-group">
-      <label>RUT</label>
+      <label id="lblUsuario">RUT</label>
       <input id="inputRut" type="text" placeholder="Ej: 19041014-5" autocomplete="username">
     </div>
     <div class="form-group">
@@ -738,17 +741,53 @@ body{background:#fff}
 <script>
 
 // ===== FIREBASE =====
-// ===== SUPABASE (via Firebase shim) =====
-  firebase.initializeApp({});
-  const db = firebase.database();
+  firebase.initializeApp(window.FIREBASE_CONFIG || {});
+  const db     = firebase.database();
+  const fbAuth = firebase.auth();
+  // Modo mantención: la app queda cerrada para los trabajadores y solo entra la
+  // administración con su correo. El bloqueo de verdad esta en database.rules.json
+  // (la lectura exige una cuenta de administracion); esto es la cara visible.
+  const MANTENIMIENTO = !!window.MANTENIMIENTO;
 
 // APPDATA loaded from Firebase
 let APPDATA = { workers: {}, users: {}, consumo: {} };
 let firebaseLoaded = false;
 
-// Load data from Firebase on startup
-function loadFirebaseData() {
-  db.ref('propinas').once('value').then(snap => {
+// ===== CONTRASEÑAS =====
+// Las claves NO se guardan en texto plano: la base solo conserva SHA-256(rut:clave).
+async function hashPass(nrut, pass){
+  const data = new TextEncoder().encode(String(nrut).toUpperCase() + ':' + String(pass));
+  const buf  = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+// Clave inicial de cada trabajador = su RUT sin puntos ni guion.
+function defaultPassFor(rut){ return String(rut).replace(/[.\-]/g,''); }
+
+function showLoadError(msg){
+  const el = document.getElementById('loadingScreen');
+  if (el) el.innerHTML = '<p style="color:#e57373;padding:20px;text-align:center;max-width:420px;line-height:1.5">' + msg + '</p>';
+}
+
+// Load data from Firebase on startup.
+// La lectura exige sesión iniciada (ver database.rules.json): se abre una
+// sesión anónima antes de leer.
+async function loadFirebaseData() {
+  try {
+    if (!window.FIREBASE_CONFIG || !window.FIREBASE_CONFIG.databaseURL) {
+      showLoadError('La aplicación no está configurada: falta firebase-config.js.');
+      return;
+    }
+    if (MANTENIMIENTO) {
+      // En mantencion no se lee nada antes de identificarse: las reglas solo
+      // permiten leer a la administracion.
+      document.getElementById('avisoMantencion').style.display = 'block';
+      document.getElementById('lblUsuario').textContent = 'Correo de administraci\u00f3n';
+      document.getElementById('inputRut').placeholder = 'nombre@larusia.app';
+      document.getElementById('loadingScreen').style.display = 'none';
+      return;
+    }
+    if (!fbAuth.currentUser) await fbAuth.signInAnonymously();
+    const snap = await db.ref('propinas').once('value');
     const data = snap.val();
     if (data) {
       APPDATA.workers = data.workers || {};
@@ -757,10 +796,19 @@ function loadFirebaseData() {
     }
     firebaseLoaded = true;
     document.getElementById('loadingScreen').style.display = 'none';
-  }).catch(err => {
+  } catch (err) {
     console.error('Error cargando datos:', err);
-    document.getElementById('loadingScreen').innerHTML = '<p style="color:#e57373;padding:20px">Error al cargar datos. Recarga la página.</p>';
-  });
+    showLoadError('Error al cargar datos (' + (err.code || err.message) + '). Recarga la página.');
+  }
+}
+
+// Vuelve a leer toda la base hacia APPDATA (se usa después de escribir).
+async function refreshAppData(){
+  const snap = await db.ref('propinas').once('value');
+  const fd = snap.val() || {};
+  APPDATA.workers = fd.workers || {};
+  APPDATA.users   = fd.users   || {};
+  APPDATA.consumo = fd.consumo || {};
 }
 
 
@@ -781,9 +829,10 @@ const normRut = r => r.replace(/\./g,'').replace(/\s/g,'').toUpperCase().trim();
 
 
 // ===== PASSWORDS (Firebase) =====
-function getCurrentPass(nrut){
+// Devuelve el hash guardado del trabajador (o null si no existe).
+function getStoredHash(nrut){
   for(const [uid,u] of Object.entries(APPDATA.users)){
-    if(normRut(uid)===nrut) return u.password;
+    if(normRut(uid)===nrut) return u.passHash || null;
   }
   return null;
 }
@@ -800,22 +849,80 @@ function isDefaultPass(nrut){
 let currentUser=null, currentRut=null, currentRutNorm=null;
 let currentDetailRut=null;
 
-function doLogin(){
-  const rut=normRut($('inputRut').value);
+async function doLogin(){
+  const crudo=$('inputRut').value.trim();
+  const rut=normRut(crudo);
   const pass=$('inputPass').value.trim();
-  $('loginError').style.display='none';
-  let found=null;
-  for(const [uid,u] of Object.entries(APPDATA.users)){
-    if(normRut(uid)===rut){
-      const cp=getCurrentPass(rut);
-      if(cp===pass){ found={...u,rut:uid,nrut:rut}; break; }
+  const errBox=$('loginError');
+  errBox.style.display='none';
+
+  // Ingreso por correo: es como entra la administracion, y el unico camino
+  // mientras la app esta en mantencion.
+  if(crudo.includes('@')){
+    try{
+      await fbAuth.signInWithEmailAndPassword(crudo.toLowerCase(), pass);
+      await refreshAppData();
+    }catch(e){
+      console.warn('login correo:', e.code || e.message);
+      errBox.textContent = (e.code === 'permission-denied' || e.code === 'PERMISSION_DENIED')
+        ? '\u274c Esa cuenta no tiene acceso mientras la app est\u00e1 en mantenci\u00f3n.'
+        : '\u274c Correo o contrase\u00f1a incorrectos.';
+      errBox.style.display='block'; return;
     }
+    const correo=crudo.toLowerCase();
+    let ruid=null, ru=null;
+    for(const [k,v] of Object.entries(APPDATA.users)){
+      if((v.email||'').toLowerCase()===correo){ ruid=k; ru=v; break; }
+    }
+    currentUser = ru ? {...ru, rut:ruid, nrut:normRut(ruid)}
+                     : {nombre:correo.split('@')[0].toUpperCase(), tipo:'admin', email:correo, rut:correo, nrut:correo};
+    currentRut=currentUser.rut; currentRutNorm=currentUser.nrut;
+    startApp();
+    return;
   }
-  if(!found){ $('loginError').style.display='block'; return; }
-  currentUser=found; currentRut=found.rut; currentRutNorm=found.nrut;
-  // First login check (only for workers)
-  if(found.tipo==='trabajador' && isDefaultPass(found.nrut)){
-    pendingLogin=found;
+
+  if(MANTENIMIENTO){
+    errBox.textContent='\u274c La aplicaci\u00f3n est\u00e1 en mantenci\u00f3n. Vuelve a intentarlo en unos d\u00edas.';
+    errBox.style.display='block'; return;
+  }
+
+  let uid=null, u=null;
+  for(const [k,v] of Object.entries(APPDATA.users)){
+    if(normRut(k)===rut){ uid=k; u=v; break; }
+  }
+  if(!u){ errBox.textContent='\u274c RUT o contrase\u00f1a incorrectos.'; errBox.style.display='block'; return; }
+
+  // --- Administración: se autentica contra Firebase Authentication.
+  //     Su clave nunca se guarda en la base de datos.
+  if(u.tipo==='admin'){
+    try{
+      await fbAuth.signInWithEmailAndPassword(u.email || window.ADMIN_EMAIL, pass);
+    }catch(e){
+      console.warn('login admin:', e.code || e.message);
+      errBox.style.display='block'; return;
+    }
+    await refreshAppData();
+    currentUser={...u,rut:uid,nrut:rut}; currentRut=uid; currentRutNorm=rut;
+    startApp();
+    return;
+  }
+
+  // --- Trabajador: se compara contra el hash guardado.
+  const h = await hashPass(rut, pass);
+  let okPass = !!(u.passHash && u.passHash === h);
+  if(!okPass && u.password && u.password === pass){
+    // Compatibilidad con datos antiguos en texto plano: se migra al vuelo.
+    okPass = true;
+    try{
+      await db.ref('propinas/users/'+uid.replace(/\./g,'_')).update({passHash:h, password:null});
+      u.passHash = h; delete u.password;
+    }catch(e){ console.warn('no se pudo migrar la clave:', e.code || e.message); }
+  }
+  if(!okPass){ errBox.style.display='block'; return; }
+
+  currentUser={...u,rut:uid,nrut:rut}; currentRut=uid; currentRutNorm=rut;
+  if(u.tipo==='trabajador' && isDefaultPass(rut)){
+    pendingLogin=currentUser;
     openModalFirstLogin();
   } else {
     startApp();
@@ -848,27 +955,34 @@ function clearModalErr(){
   $('modalOk').style.display='none';
 }
 
-function saveNewPass(){
+async function saveNewPass(){
   const p1=$('newPass1').value.trim();
   const p2=$('newPass2').value.trim();
   const err=$('modalErr'); const ok=$('modalOk');
   if(p1.length<6){ err.textContent='La contraseña debe tener al menos 6 caracteres.'; err.style.display='block'; return; }
   if(p1!==p2){ err.textContent='Las contraseñas no coinciden.'; err.style.display='block'; return; }
-  // Save to Firebase
   let targetUid = null;
   for(const [uid] of Object.entries(APPDATA.users)){
     if(normRut(uid)===currentRutNorm){ targetUid=uid; break; }
   }
   if(!targetUid){ err.textContent='Error: usuario no encontrado.'; err.style.display='block'; return; }
-  const safeUid = targetUid.replace(/\./g,'_');
-  db.ref('propinas/users/' + safeUid + '/password').set(p1).then(()=>{
-    db.ref('propinas/users/' + safeUid + '/changed').set(true);
-    APPDATA.users[targetUid].password = p1;
+  try{
+    if(currentUser && currentUser.tipo==='admin'){
+      await fbAuth.currentUser.updatePassword(p1);
+    } else {
+      const safeUid = targetUid.replace(/\./g,'_');
+      const h = await hashPass(currentRutNorm, p1);
+      await db.ref('propinas/users/' + safeUid).update({ passHash: h, password: null, changed: true });
+      APPDATA.users[targetUid].passHash = h;
+      delete APPDATA.users[targetUid].password;
+    }
     APPDATA.users[targetUid].changed = true;
     ok.textContent='✅ Contraseña guardada correctamente.'; ok.style.display='block';
     err.style.display='none';
     setTimeout(()=>{ $('modalPass').classList.remove('open'); if(pendingLogin){pendingLogin=null;startApp();} },1200);
-  }).catch(e=>{ err.textContent='Error al guardar: '+e.message; err.style.display='block'; });
+  }catch(e){
+    err.textContent='Error al guardar: '+(e.message||e.code); err.style.display='block';
+  }
 }
 
 
@@ -1111,65 +1225,39 @@ function renderClaves(){
     const nrut=normRut(rut);
     const u=APPDATA.users[rut];
     const changed=!!(u&&u.changed);
-    const pass=u?u.password:'—';
     rows+=`<tr>
       <td><strong>${w.n}</strong></td>
-      <td style="font-size:12px;color:#666">${w.rd}</td>
-      <td>${changed?'<span class="badge-changed">Cambiada</span>':'<span class="badge-default">Default</span>'}</td>
-      <td id="pass_${nrut}"><span class="pass-show" style="cursor:default">${pass}</span></td>
-      <td><button class="pass-show" onclick="togglePass('${nrut}','${pass}',this)">Ocultar</button>
-          ${changed?`<button class="pass-show" style="margin-left:4px;background:#fde8e8;border-color:#f5c6c6;color:var(--rojo-err)" onclick="resetPass('${nrut}','${rut}')">Reset</button>`:''}
-      </td></tr>`;
+      <td style="font-size:12px;color:#666">${w.rd||rut}</td>
+      <td>${changed?'<span class="badge-changed">Personal</span>':'<span class="badge-default">Inicial (RUT)</span>'}</td>
+      <td id="pass_${nrut}"><span class="pass-hidden">\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022</span></td>
+      <td><button class="pass-show" style="background:#fde8e8;border-color:#f5c6c6;color:var(--rojo-err)" onclick="resetPass('${nrut}','${rut}')">Restablecer</button></td>
+      </tr>`;
   }
-  $('clavesTable').innerHTML=rows;
+  $('clavesTable').innerHTML = rows || '<tr><td colspan="5" style="color:#888;padding:14px">Sin trabajadores cargados.</td></tr>';
 }
 
-
-function togglePass(nrut,pass,btn){
-  const cell=$('pass_'+nrut);
-  const hidden=cell.querySelector('.pass-hidden');
-  if(hidden){
-    cell.innerHTML=`<span class="pass-show" style="cursor:default">${pass}</span>`;
-    btn.textContent='Ocultar';
-  } else {
-    cell.innerHTML='<span class="pass-hidden">••••••••</span>';
-    btn.textContent='Ver';
-  }
+// Las contrase\u00f1as ya no se pueden mostrar: la base solo guarda un hash irreversible.
+function togglePass(){ avisoClaves(); }
+function toggleAllPass(){ avisoClaves(); }
+function avisoClaves(){
+  alert('Las contrase\u00f1as ya no se guardan en texto plano: la base solo conserva un hash irreversible, '
+      + 'as\u00ed que nadie \u2014 ni el administrador \u2014 puede leerlas.\n\n'
+      + 'Si un trabajador olvida su clave, usa "Restablecer": vuelve a quedar su RUT sin puntos ni guion.');
 }
 
-
-let showingAll=true;
-function toggleAllPass(){
-  const workers=APPDATA.workers;
-  showingAll=!showingAll;
-  for(const [rut,w] of Object.entries(workers)){
-    const nrut=normRut(rut);
-    const u=APPDATA.users[rut];
-    const pass=u?u.password:'—';
-    const cell=$('pass_'+nrut);
-    if(!cell)continue;
-    const btn=cell.parentElement.querySelector('.pass-show[onclick^="togglePass"]');
-    if(showingAll){
-      cell.innerHTML=`<span class="pass-show" style="cursor:default">${pass}</span>`;
-      if(btn)btn.textContent='Ocultar';
-    } else {
-      cell.innerHTML='<span class="pass-hidden">••••••••</span>';
-      if(btn)btn.textContent='Ver';
+async function resetPass(nrut, rut){
+  if(!confirm('\u00bfRestablecer la contrase\u00f1a de este trabajador?\n\nVolver\u00e1 a ser su RUT sin puntos ni guion.'))return;
+  try{
+    const safeUid = rut.replace(/\./g,'_');
+    const h = await hashPass(nrut, defaultPassFor(nrut));
+    await db.ref('propinas/users/' + safeUid).update({ passHash: h, password: null, changed: false });
+    if(APPDATA.users[rut]){
+      APPDATA.users[rut].passHash = h;
+      APPDATA.users[rut].changed  = false;
+      delete APPDATA.users[rut].password;
     }
-  }
-}
-
-
-function resetPass(nrut, rut){
-  if(!confirm('¿Restablecer la contraseña de este trabajador al valor predeterminado?'))return;
-  const safeUid = rut.replace(/\./g,'_');
-  const defaultPass = nrut; // default = normalized RUT digits
-  db.ref('propinas/users/' + safeUid + '/password').set(defaultPass).then(()=>{
-    db.ref('propinas/users/' + safeUid + '/changed').set(false);
-    APPDATA.users[rut].password = defaultPass;
-    APPDATA.users[rut].changed = false;
     renderClaves();
-  }).catch(e=>alert('Error: '+e.message));
+  }catch(e){ alert('Error: '+(e.message||e.code)); }
 }
 
 
@@ -1420,10 +1508,9 @@ async function confirmarImport() {
     // Create user entry if not exists (rut without dashes)
     const userKey = 'propinas/users/' + safeRut;
     if (!curUsers[rut] && !curUsers[safeRut]) {
-      // Default password = RUT without dots/dash
-      const defaultPass = rut.replace(/[.\-]/g,'');
+      // Clave inicial = RUT sin puntos ni guion, guardada como hash.
       updates[userKey + '/nombre']   = info.nom;
-      updates[userKey + '/password'] = defaultPass;
+      updates[userKey + '/passHash'] = await hashPass(normRut(rut), defaultPassFor(rut));
       updates[userKey + '/tipo']     = 'trabajador';
       updates[userKey + '/changed']  = false;
     }

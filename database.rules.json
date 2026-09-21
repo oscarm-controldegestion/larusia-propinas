@@ -1,0 +1,30 @@
+{
+  // ==========================================================
+  //  Reglas de seguridad — App de Propinas La Rusia SPA
+  //  ESTADO ACTUAL: MODO MANTENCION / REVISION
+  //
+  //  Solo las cuentas de administracion pueden leer y escribir.
+  //  Nadie mas obtiene un solo dato, aunque conozca la direccion
+  //  de la pagina: el bloqueo lo aplica el servidor de Firebase,
+  //  no la pagina web.
+  //
+  //  Para ABRIR la app a los trabajadores cuando terminen de
+  //  revisar: publicar database.rules.abierta.json en su lugar y
+  //  poner window.MANTENIMIENTO = false en firebase-config.js.
+  //  Los dos cambios van juntos.
+  //
+  //  Publicar con:  firebase deploy --only database
+  // ==========================================================
+  "rules": {
+    "propinas": {
+      ".read":  "auth != null && (auth.token.email === 'oscar@larusia.app' || auth.token.email === 'rossana@larusia.app' || auth.token.email === 'paola@larusia.app' || auth.token.email === 'carga@larusia.app' || root.child('propinas/config/admins').child(auth.uid).val() === true)",
+      ".write": "auth != null && (auth.token.email === 'oscar@larusia.app' || auth.token.email === 'rossana@larusia.app' || auth.token.email === 'paola@larusia.app' || auth.token.email === 'carga@larusia.app' || root.child('propinas/config/admins').child(auth.uid).val() === true)"
+    },
+
+    // Todo lo que esté fuera de /propinas queda cerrado.
+    "$otro": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

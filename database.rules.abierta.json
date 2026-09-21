@@ -1,0 +1,47 @@
+{
+  // ==========================================================
+  //  Reglas de seguridad — App de Propinas La Rusia SPA
+  //  Publicar con:  firebase deploy --only database
+  // ==========================================================
+  "rules": {
+    "propinas": {
+      // Lectura: solo con sesión iniciada. La app abre una sesión anónima
+      // al cargar, porque necesita leer el listado de usuarios para validar
+      // el RUT y la clave antes de mostrar nada.
+      ".read": "auth != null",
+
+      // Escritura: solo las cuentas de administración (Oscar, Rossana, Paola)
+      // y la cuenta de carga automática del día 6. Ningún trabajador puede
+      // alterar propinas, consumos ni datos de otros.
+      // OJO: la lista de correos es fija a propósito. No usar endsWith('@larusia.app'):
+      // cualquiera podría registrarse con ese dominio y quedar como administrador.
+      ".write": "auth != null && (auth.token.email === 'oscar@larusia.app' || auth.token.email === 'rossana@larusia.app' || auth.token.email === 'paola@larusia.app' || auth.token.email === 'carga@larusia.app' || root.child('propinas/config/admins').child(auth.uid).val() === true)",
+
+      "users": {
+        "$uid": {
+          // Única excepción: cada trabajador guarda el hash de su clave nueva.
+          "passHash": {
+            ".write": "auth != null",
+            ".validate": "newData.isString() && newData.val().length === 64"
+          },
+          "changed": {
+            ".write": "auth != null",
+            ".validate": "newData.isBoolean()"
+          },
+          // Solo se permite BORRAR restos de claves antiguas en texto plano
+          // (validate false rechaza cualquier valor distinto de null).
+          "password": {
+            ".write": "auth != null",
+            ".validate": false
+          }
+        }
+      }
+    },
+
+    // Todo lo que esté fuera de /propinas queda cerrado.
+    "$otro": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}
