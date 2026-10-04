@@ -280,8 +280,7 @@ body{background:#fff}
     </div>
     <div class="divider"></div>
     <div id="avisoMantencion" style="display:none;background:#fff8e1;border:1px solid #f0d79a;color:#7a5b12;padding:12px 14px;border-radius:8px;font-size:13px;line-height:1.5;margin-bottom:16px;text-align:left">
-      <strong>Aplicación en mantención</strong><br>
-      Estamos revisando la información de propinas y consumos. Vuelve a intentarlo en unos días.
+      <strong>Aplicación en mantención</strong>
     </div>
     <div class="form-group">
       <label id="lblUsuario">RUT</label>
@@ -882,7 +881,7 @@ async function doLogin(){
   }
 
   if(MANTENIMIENTO){
-    errBox.textContent='\u274c La aplicaci\u00f3n est\u00e1 en mantenci\u00f3n. Vuelve a intentarlo en unos d\u00edas.';
+    errBox.textContent='\u274c Aplicaci\u00f3n en mantenci\u00f3n.';
     errBox.style.display='block'; return;
   }
 
