@@ -935,14 +935,28 @@ async function doLogin(){
     errBox.style.display='block'; return;
   }
   if(!acc || !acc.e){ errBox.textContent='\u274c RUT o contrase\u00f1a incorrectos.'; errBox.style.display='block'; return; }
+  // Primero la clave de la app (inicial o cambiada aqui). Si no calza, la clave tal cual:
+  // es la que se crea en la pagina de Firebase al usar \u00bfOlvidaste tu contrase\u00f1a?
+  let porCorreo=false;
   try{
-    await fbAuth.signInWithEmailAndPassword(acc.e, claveAuth(pass));
+    try{
+      await fbAuth.signInWithEmailAndPassword(acc.e, claveAuth(pass));
+    }catch(e1){
+      const malaClave = ['auth/invalid-credential','auth/wrong-password','auth/invalid-login-credentials'].includes(e1.code);
+      if(!malaClave || pass.length < 6) throw e1;
+      await fbAuth.signInWithEmailAndPassword(acc.e, pass);
+      porCorreo=true;
+    }
   }catch(e){
     console.warn('login trabajador:', e.code || e.message);
     errBox.textContent = (e.code === 'auth/too-many-requests')
       ? '\u274c Demasiados intentos. Espera unos minutos o usa \u00bfOlvidaste tu contrase\u00f1a?'
       : '\u274c RUT o contrase\u00f1a incorrectos.';
     errBox.style.display='block'; return;
+  }
+  if(porCorreo){
+    // Ya creo su clave personal con el enlace del correo: no se le vuelve a pedir el cambio.
+    try{ await db.ref('propinas/users/' + rutT + '/changed').set(true); }catch(e){ console.warn('changed:', e.code || e.message); }
   }
   await cargarDatosPropios(rutT);
   const u = APPDATA.users[rutT] || {nombre: rutT};
@@ -960,8 +974,9 @@ async function doLogin(){
   }
 }
 
-// \u00bfOlvidaste tu contrase\u00f1a?: Firebase manda al correo de la ficha un enlace que vuelve
-// a esta misma pagina (plantilla de restablecimiento con la URL de accion de la app).
+// \u00bfOlvidaste tu contrase\u00f1a?: Firebase manda al correo de la ficha un enlace a su pagina
+// (en espanol) para crear la clave nueva; al terminar, el boton Continuar vuelve a la app.
+// En el plan gratuito de Firebase no se puede cambiar la URL de accion de la plantilla.
 async function olvideClave(){
   const errBox=$('loginError'), info=$('loginInfo');
   errBox.style.display='none'; info.style.display='none';
@@ -976,7 +991,7 @@ async function olvideClave(){
     errBox.style.display='block'; return;
   }
   try{
-    await fbAuth.sendPasswordResetEmail(acc.e);
+    await fbAuth.sendPasswordResetEmail(acc.e, {url: APP_URL});
     info.textContent='\u2709\ufe0f Te enviamos un correo a ' + enmascarar(acc.e) + ' con un enlace para crear una nueva contrase\u00f1a. Revisa tambi\u00e9n la carpeta de spam.';
     info.style.display='block';
   }catch(e){
@@ -986,7 +1001,8 @@ async function olvideClave(){
   }
 }
 
-// Enlace del correo: la pagina abre con ?mode=resetPassword&oobCode=... y pide la clave nueva.
+// Por si algun dia la plantilla apunta a la app (plan Blaze): la pagina abre con
+// ?mode=resetPassword&oobCode=... y pide la clave nueva aqui mismo.
 let resetCode=null;
 function revisarEnlaceDeClave(){
   const q=new URLSearchParams(location.search);
@@ -1369,7 +1385,7 @@ async function resetPass(nrut, rut){
   const acc = (APPDATA.acceso || {})[rut] || await leerAcceso(rut);
   if(!acc || !acc.e){ alert('Este trabajador todav\u00eda no tiene cuenta de acceso.'); return; }
   if(!confirm('\u00bfEnviar a ' + enmascarar(acc.e) + ' un correo para que cree una nueva contrase\u00f1a?'))return;
-  try{ await fbAuth.sendPasswordResetEmail(acc.e); alert('Correo enviado a ' + enmascarar(acc.e) + '.'); }
+  try{ await fbAuth.sendPasswordResetEmail(acc.e, {url: APP_URL}); alert('Correo enviado a ' + enmascarar(acc.e) + '.'); }
   catch(e){ alert('Error: '+(e.message||e.code)); }
 }
 
