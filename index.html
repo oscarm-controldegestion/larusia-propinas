@@ -207,6 +207,14 @@ tfoot td{font-weight:700;padding:10px 13px}
 .worker-card .saldo{font-size:12px;font-weight:700;margin-top:7px}
 .worker-card .saldo.positivo{color:var(--verde)}
 .worker-card .saldo.negativo{color:var(--rojo-err)}
+.worker-card.desvinculado{background:#f1f1f1;border-color:#dcdcdc;opacity:.75}
+.worker-card.desvinculado:hover{border-color:#c9c9c9;background:#f6f6f6}
+.worker-card.desvinculado h4{color:#8a8a8a}
+.worker-card.desvinculado p{color:#a6a6a6}
+.badge-desvinculado{display:inline-block;background:#e9e9e9;color:#767676;border:1px solid #d3d3d3;
+  border-radius:999px;padding:1px 8px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+tr.fila-desvinculada td{background:#f6f6f6;color:#9b9b9b}
+tr.fila-desvinculada td strong{color:#8a8a8a;font-weight:600}
 .worker-card.saldo-positivo{border-color:rgba(61,122,74,.45);background:rgba(61,122,74,.05)}
 .worker-card.saldo-positivo:hover{border-color:var(--verde);background:rgba(61,122,74,.1)}
 .worker-card.saldo-negativo{border-color:rgba(192,57,43,.4);background:rgba(192,57,43,.04)}
@@ -292,6 +300,8 @@ body{background:#fff}
     </div>
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <div id="loginError" class="login-error">❌ RUT o contraseña incorrectos.</div>
+    <div id="loginInfo" style="display:none;background:#eef7ee;border:1px solid #bcdcbc;color:#2f5f35;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;margin-top:12px;text-align:left"></div>
+    <div id="linkOlvide" style="text-align:center;margin-top:14px"><a href="#" onclick="olvideClave();return false;" style="font-size:13px;color:#8a6d1f;text-decoration:underline">¿Olvidaste tu contraseña?</a></div>
   </div>
 </div>
 
@@ -542,7 +552,7 @@ body{background:#fff}
           <div class="table-wrap">
             <table>
               <thead><tr>
-                <th>#</th><th>Trabajador</th><th>RUT</th><th>Detalle</th><th>Consumido</th><th>Cobrado</th><th>Saldo</th><th></th>
+                <th>#</th><th>Trabajador</th><th>RUT</th><th>Detalle</th><th>Consumido</th><th>Descontado</th><th>Diferencia</th><th></th>
               </tr></thead>
               <tbody id="consumoAdminTbody"></tbody>
               <tfoot id="consumoAdminFoot"></tfoot>
@@ -743,6 +753,9 @@ body{background:#fff}
   firebase.initializeApp(window.FIREBASE_CONFIG || {});
   const db     = firebase.database();
   const fbAuth = firebase.auth();
+  fbAuth.languageCode = 'es';
+  // Solo para pruebas locales: firebase-config.js de prueba activa el emulador.
+  if (window.FIREBASE_EMULADOR) { fbAuth.useEmulator('http://127.0.0.1:9099'); db.useEmulator('127.0.0.1', 9000); }
   // Modo mantención: la app queda cerrada para los trabajadores y solo entra la
   // administración con su correo. El bloqueo de verdad esta en database.rules.json
   // (la lectura exige una cuenta de administracion); esto es la cara visible.
@@ -761,6 +774,37 @@ async function hashPass(nrut, pass){
 }
 // Clave inicial de cada trabajador = su RUT sin puntos ni guion.
 function defaultPassFor(rut){ return String(rut).replace(/[.\-]/g,''); }
+
+// ===== ACCESO DE CADA TRABAJADOR (Firebase Authentication, oct-2026) =====
+// Cada trabajador tiene su propia cuenta: usuario = su RUT, correo = el de su ficha en Nubox
+// (sirve para recuperar la clave). La base guarda en propinas/acceso/<RUT> solo el correo y si
+// la cuenta esta activa; la clave vive en Firebase Authentication y nunca en la base.
+// Primera clave: los 4 primeros digitos del RUT, con cambio obligatorio al primer ingreso.
+// Firebase exige claves de 6+ caracteres: por eso la clave real lleva un prefijo y un sufijo
+// fijos (no son secretos, solo completan el largo minimo).
+const APP_URL = 'https://oscarm-controldegestion.github.io/larusia-propinas/';
+function claveAuth(p){ return 'LR-' + String(p) + '-propinas'; }
+function claveInicial(rut){ return String(rut).replace(/[^0-9kK]/g,'').slice(0,4); }
+function rutClave(crudo){
+  let r = String(crudo).replace(/[.\s]/g,'').replace(/-/g,'').toUpperCase();
+  return r.length > 1 ? r.slice(0,-1) + '-' + r.slice(-1) : r;
+}
+function enmascarar(correo){
+  const [u, d] = String(correo).split('@');
+  return (u.length <= 2 ? u[0] + '*' : u.slice(0,2) + '*'.repeat(Math.max(2, u.length - 2))) + '@' + d;
+}
+async function leerAcceso(rut){
+  try { return (await db.ref('propinas/acceso/' + rut).once('value')).val(); }
+  catch(e){ console.warn('acceso:', e.code || e.message); return null; }
+}
+// Un trabajador solo puede leer sus propios datos (database.rules.abierta.json).
+async function cargarDatosPropios(rut){
+  const leer = n => db.ref('propinas/' + n + '/' + rut).once('value').then(s => s.val()).catch(() => null);
+  const [u, w, c] = await Promise.all([leer('users'), leer('workers'), leer('consumo')]);
+  APPDATA.users = u ? {[rut]: u} : {};
+  APPDATA.workers = w ? {[rut]: w} : {};
+  APPDATA.consumo = c ? {[rut]: c} : {};
+}
 
 function showLoadError(msg){
   const el = document.getElementById('loadingScreen');
@@ -783,18 +827,15 @@ async function loadFirebaseData() {
       document.getElementById('lblUsuario').textContent = 'Correo de administraci\u00f3n';
       document.getElementById('inputRut').placeholder = 'nombre@larusia.app';
       document.getElementById('loadingScreen').style.display = 'none';
+      if (document.getElementById('linkOlvide')) document.getElementById('linkOlvide').style.display = 'none';
+      revisarEnlaceDeClave();
       return;
     }
-    if (!fbAuth.currentUser) await fbAuth.signInAnonymously();
-    const snap = await db.ref('propinas').once('value');
-    const data = snap.val();
-    if (data) {
-      APPDATA.workers = data.workers || {};
-      APPDATA.users   = data.users   || {};
-      APPDATA.consumo = data.consumo || {};
-    }
+    // Abierta: no se lee nada antes de identificarse. Cada trabajador entra con su
+    // propia cuenta y las reglas solo le dejan leer sus datos.
     firebaseLoaded = true;
     document.getElementById('loadingScreen').style.display = 'none';
+    revisarEnlaceDeClave();
   } catch (err) {
     console.error('Error cargando datos:', err);
     showLoadError('Error al cargar datos (' + (err.code || err.message) + '). Recarga la página.');
@@ -808,6 +849,7 @@ async function refreshAppData(){
   APPDATA.workers = fd.workers || {};
   APPDATA.users   = fd.users   || {};
   APPDATA.consumo = fd.consumo || {};
+  APPDATA.acceso  = fd.acceso  || {};
 }
 
 
@@ -885,46 +927,100 @@ async function doLogin(){
     errBox.style.display='block'; return;
   }
 
-  let uid=null, u=null;
-  for(const [k,v] of Object.entries(APPDATA.users)){
-    if(normRut(k)===rut){ uid=k; u=v; break; }
+  // --- Trabajador: entra con su RUT y su clave (cuenta propia en Firebase Authentication).
+  const rutT = rutClave(crudo);
+  const acc = await leerAcceso(rutT);
+  if(acc && acc.a === false){
+    errBox.textContent='\u274c Esta cuenta est\u00e1 desactivada. Habla con administraci\u00f3n.';
+    errBox.style.display='block'; return;
   }
-  if(!u){ errBox.textContent='\u274c RUT o contrase\u00f1a incorrectos.'; errBox.style.display='block'; return; }
-
-  // --- Administración: se autentica contra Firebase Authentication.
-  //     Su clave nunca se guarda en la base de datos.
-  if(u.tipo==='admin'){
-    try{
-      await fbAuth.signInWithEmailAndPassword(u.email || window.ADMIN_EMAIL, pass);
-    }catch(e){
-      console.warn('login admin:', e.code || e.message);
-      errBox.style.display='block'; return;
-    }
-    await refreshAppData();
-    currentUser={...u,rut:uid,nrut:rut}; currentRut=uid; currentRutNorm=rut;
-    startApp();
-    return;
+  if(!acc || !acc.e){ errBox.textContent='\u274c RUT o contrase\u00f1a incorrectos.'; errBox.style.display='block'; return; }
+  try{
+    await fbAuth.signInWithEmailAndPassword(acc.e, claveAuth(pass));
+  }catch(e){
+    console.warn('login trabajador:', e.code || e.message);
+    errBox.textContent = (e.code === 'auth/too-many-requests')
+      ? '\u274c Demasiados intentos. Espera unos minutos o usa \u00bfOlvidaste tu contrase\u00f1a?'
+      : '\u274c RUT o contrase\u00f1a incorrectos.';
+    errBox.style.display='block'; return;
   }
-
-  // --- Trabajador: se compara contra el hash guardado.
-  const h = await hashPass(rut, pass);
-  let okPass = !!(u.passHash && u.passHash === h);
-  if(!okPass && u.password && u.password === pass){
-    // Compatibilidad con datos antiguos en texto plano: se migra al vuelo.
-    okPass = true;
-    try{
-      await db.ref('propinas/users/'+uid.replace(/\./g,'_')).update({passHash:h, password:null});
-      u.passHash = h; delete u.password;
-    }catch(e){ console.warn('no se pudo migrar la clave:', e.code || e.message); }
+  await cargarDatosPropios(rutT);
+  const u = APPDATA.users[rutT] || {nombre: rutT};
+  if(u.activo === false){
+    await fbAuth.signOut();
+    errBox.textContent='\u274c Esta cuenta est\u00e1 desactivada. Habla con administraci\u00f3n.';
+    errBox.style.display='block'; return;
   }
-  if(!okPass){ errBox.style.display='block'; return; }
-
-  currentUser={...u,rut:uid,nrut:rut}; currentRut=uid; currentRutNorm=rut;
-  if(u.tipo==='trabajador' && isDefaultPass(rut)){
+  currentUser={...u, tipo:'trabajador', rut:rutT, nrut:rutT}; currentRut=rutT; currentRutNorm=rutT;
+  if(!u.changed){
     pendingLogin=currentUser;
     openModalFirstLogin();
   } else {
     startApp();
+  }
+}
+
+// \u00bfOlvidaste tu contrase\u00f1a?: Firebase manda al correo de la ficha un enlace que vuelve
+// a esta misma pagina (plantilla de restablecimiento con la URL de accion de la app).
+async function olvideClave(){
+  const errBox=$('loginError'), info=$('loginInfo');
+  errBox.style.display='none'; info.style.display='none';
+  const crudo=$('inputRut').value.trim();
+  if(!crudo || crudo.includes('@')){
+    errBox.textContent='\u274c Escribe tu RUT arriba y vuelve a presionar \u00bfOlvidaste tu contrase\u00f1a?';
+    errBox.style.display='block'; return;
+  }
+  const acc = await leerAcceso(rutClave(crudo));
+  if(!acc || !acc.e || acc.a === false){
+    errBox.textContent='\u274c No encontramos una cuenta activa con ese RUT. Habla con administraci\u00f3n.';
+    errBox.style.display='block'; return;
+  }
+  try{
+    await fbAuth.sendPasswordResetEmail(acc.e);
+    info.textContent='\u2709\ufe0f Te enviamos un correo a ' + enmascarar(acc.e) + ' con un enlace para crear una nueva contrase\u00f1a. Revisa tambi\u00e9n la carpeta de spam.';
+    info.style.display='block';
+  }catch(e){
+    console.warn('olvide clave:', e.code || e.message);
+    errBox.textContent='\u274c No se pudo enviar el correo. Habla con administraci\u00f3n.';
+    errBox.style.display='block';
+  }
+}
+
+// Enlace del correo: la pagina abre con ?mode=resetPassword&oobCode=... y pide la clave nueva.
+let resetCode=null;
+function revisarEnlaceDeClave(){
+  const q=new URLSearchParams(location.search);
+  if(q.get('mode')==='resetPassword' && q.get('oobCode')){
+    resetCode=q.get('oobCode');
+    $('modalPassMsg').textContent='Crea tu nueva contrase\u00f1a (m\u00ednimo 6 caracteres).';
+    $('modalCancelRow').style.display='block';
+    $('modalErr').style.display='none'; $('modalOk').style.display='none';
+    $('newPass1').value=''; $('newPass2').value='';
+    $('modalPass').classList.add('open');
+  }
+}
+async function guardarClaveRecuperada(p1){
+  const err=$('modalErr'), ok=$('modalOk');
+  try{
+    const correo = await fbAuth.verifyPasswordResetCode(resetCode);
+    await fbAuth.confirmPasswordReset(resetCode, claveAuth(p1));
+    try{
+      // Marca que ya tiene clave personal (no se le vuelve a pedir el cambio).
+      const cred = await fbAuth.signInWithEmailAndPassword(correo, claveAuth(p1));
+      const rut = (await db.ref('propinas/uidrut/' + cred.user.uid).once('value')).val();
+      if(rut) await db.ref('propinas/users/' + rut + '/changed').set(true);
+      await fbAuth.signOut();
+    }catch(e){ console.warn('despues de restablecer:', e.code || e.message); }
+    resetCode=null; history.replaceState(null, '', location.pathname);
+    ok.textContent='\u2705 Contrase\u00f1a guardada. Ahora ingresa con tu RUT y tu nueva contrase\u00f1a.';
+    ok.style.display='block'; err.style.display='none';
+    setTimeout(()=>$('modalPass').classList.remove('open'), 2500);
+  }catch(e){
+    console.warn('restablecer:', e.code || e.message);
+    err.textContent = (e.code==='auth/expired-action-code' || e.code==='auth/invalid-action-code')
+      ? 'El enlace venci\u00f3 o ya se us\u00f3. Pide uno nuevo con \u00bfOlvidaste tu contrase\u00f1a?'
+      : 'No se pudo guardar la contrase\u00f1a (' + (e.code || e.message) + ').';
+    err.style.display='block';
   }
 }
 $('inputPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
@@ -932,7 +1028,7 @@ $('inputRut').addEventListener('keydown',e=>{if(e.key==='Enter')$('inputPass').f
 
 let pendingLogin=null;
 function openModalFirstLogin(){
-  $('modalPassMsg').textContent='Es tu primer inicio de sesión. Por seguridad, crea una contraseña personal.';
+  $('modalPassMsg').textContent='Es tu primer inicio de sesión. Por seguridad, crea una contraseña personal (mínimo 6 caracteres).';
   $('modalCancelRow').style.display='none';
   $('modalErr').style.display='none';
   $('modalOk').style.display='none';
@@ -960,6 +1056,10 @@ async function saveNewPass(){
   const err=$('modalErr'); const ok=$('modalOk');
   if(p1.length<6){ err.textContent='La contraseña debe tener al menos 6 caracteres.'; err.style.display='block'; return; }
   if(p1!==p2){ err.textContent='Las contraseñas no coinciden.'; err.style.display='block'; return; }
+  if(resetCode){ return guardarClaveRecuperada(p1); }
+  if(currentUser && currentUser.tipo!=='admin' && p1===claveInicial(currentRutNorm)){
+    err.textContent='La nueva contraseña no puede ser la inicial.'; err.style.display='block'; return;
+  }
   let targetUid = null;
   for(const [uid] of Object.entries(APPDATA.users)){
     if(normRut(uid)===currentRutNorm){ targetUid=uid; break; }
@@ -969,29 +1069,32 @@ async function saveNewPass(){
     if(currentUser && currentUser.tipo==='admin'){
       await fbAuth.currentUser.updatePassword(p1);
     } else {
-      const safeUid = targetUid.replace(/\./g,'_');
-      const h = await hashPass(currentRutNorm, p1);
-      await db.ref('propinas/users/' + safeUid).update({ passHash: h, password: null, changed: true });
-      APPDATA.users[targetUid].passHash = h;
-      delete APPDATA.users[targetUid].password;
+      await fbAuth.currentUser.updatePassword(claveAuth(p1));
+      await db.ref('propinas/users/' + targetUid.replace(/\./g,'_') + '/changed').set(true);
     }
     APPDATA.users[targetUid].changed = true;
     ok.textContent='✅ Contraseña guardada correctamente.'; ok.style.display='block';
     err.style.display='none';
     setTimeout(()=>{ $('modalPass').classList.remove('open'); if(pendingLogin){pendingLogin=null;startApp();} },1200);
   }catch(e){
-    err.textContent='Error al guardar: '+(e.message||e.code); err.style.display='block';
+    err.textContent = (e.code==='auth/requires-recent-login')
+      ? 'Por seguridad, cierra sesi\u00f3n, vuelve a entrar y cambia tu contrase\u00f1a de inmediato.'
+      : 'Error al guardar: '+(e.message||e.code);
+    err.style.display='block';
   }
 }
 
 
 function closeModal(){
   $('modalPass').classList.remove('open');
-  pendingLogin=null;
+  if(pendingLogin){ pendingLogin=null; fbAuth.signOut().catch(()=>{}); }
+  if(resetCode){ resetCode=null; history.replaceState(null, '', location.pathname); }
 }
 
 function doLogout(){
   currentUser=null; currentRut=null; currentRutNorm=null;
+  fbAuth.signOut().catch(()=>{});
+  APPDATA = { workers: {}, users: {}, consumo: {} };
   $('loginPage').style.display='flex';
   $('app').style.display='none';
   $('inputRut').value=''; $('inputPass').value='';
@@ -1162,6 +1265,21 @@ function renderMensual(month){
     <td class="num">${clp(tn+tc)}</td><td></td></tr>`;
 }
 
+// Un trabajador desvinculado conserva sus datos pero no puede entrar a la app.
+function esDesvinculado(rut){
+  const u = APPDATA.users[rut];
+  if (u) return u.activo === false;
+  const n = normRut(rut);
+  for (const [k,v] of Object.entries(APPDATA.users)) if (normRut(k)===n) return !!v && v.activo === false;
+  return false;
+}
+function uidDe(rut){
+  if (APPDATA.users[rut]) return rut;
+  const n = normRut(rut);
+  for (const k of Object.keys(APPDATA.users)) if (normRut(k)===n) return k;
+  return null;
+}
+
 function renderWorkersList(filter=''){
   const workers=APPDATA.workers, fl=filter.toLowerCase();
   let html='';
@@ -1169,8 +1287,10 @@ function renderWorkersList(filter=''){
     if(!w.h||!w.h.length)continue;
     if(fl&&!w.n.toLowerCase().includes(fl)&&!rut.includes(fl))continue;
     const s=w.h[w.h.length-1].s;
-    html+=`<div class="worker-card ${s>=0?'saldo-positivo':'saldo-negativo'}" onclick="showWorkerDetail('${rut}')">
+    const fuera=esDesvinculado(rut);
+    html+=`<div class="worker-card ${fuera?'desvinculado':(s>=0?'saldo-positivo':'saldo-negativo')}" onclick="showWorkerDetail('${rut}')">
       <h4>${w.n}</h4><p>RUT: ${w.rd} · ${w.h.length} meses</p>
+      ${fuera?'<p style="margin-top:5px"><span class="badge-desvinculado">Desvinculado</span></p>':''}
       <div class="saldo ${s>=0?'positivo':'negativo'}">${s>=0?'✅':'⚠️'} Saldo fondo: ${clp(s)}</div></div>`;
   }
   $('workersList').innerHTML=html||'<p style="color:#888;padding:16px">Sin resultados.</p>';
@@ -1224,10 +1344,11 @@ function renderClaves(){
     const nrut=normRut(rut);
     const u=APPDATA.users[rut];
     const changed=!!(u&&u.changed);
-    rows+=`<tr>
-      <td><strong>${w.n}</strong></td>
+    const fuera=esDesvinculado(rut);
+    rows+=`<tr class="${fuera?'fila-desvinculada':''}">
+      <td><strong>${w.n}</strong>${fuera?' <span class="badge-desvinculado">Desvinculado</span>':''}</td>
       <td style="font-size:12px;color:#666">${w.rd||rut}</td>
-      <td>${changed?'<span class="badge-changed">Personal</span>':'<span class="badge-default">Inicial (RUT)</span>'}</td>
+      <td>${fuera?'<span class="badge-desvinculado">Sin acceso</span>':(!((APPDATA.acceso||{})[rut])?'<span class="badge-default">Sin cuenta</span>':(changed?'<span class="badge-changed">Personal</span>':'<span class="badge-default">Inicial (4 d\u00edgitos)</span>'))}</td>
       <td id="pass_${nrut}"><span class="pass-hidden">\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022</span></td>
       <td><button class="pass-show" style="background:#fde8e8;border-color:#f5c6c6;color:var(--rojo-err)" onclick="resetPass('${nrut}','${rut}')">Restablecer</button></td>
       </tr>`;
@@ -1241,22 +1362,15 @@ function toggleAllPass(){ avisoClaves(); }
 function avisoClaves(){
   alert('Las contrase\u00f1as ya no se guardan en texto plano: la base solo conserva un hash irreversible, '
       + 'as\u00ed que nadie \u2014 ni el administrador \u2014 puede leerlas.\n\n'
-      + 'Si un trabajador olvida su clave, usa "Restablecer": vuelve a quedar su RUT sin puntos ni guion.');
+      + 'Si un trabajador olvida su clave, usa "Restablecer": le llega un correo para crear una nueva.');
 }
 
 async function resetPass(nrut, rut){
-  if(!confirm('\u00bfRestablecer la contrase\u00f1a de este trabajador?\n\nVolver\u00e1 a ser su RUT sin puntos ni guion.'))return;
-  try{
-    const safeUid = rut.replace(/\./g,'_');
-    const h = await hashPass(nrut, defaultPassFor(nrut));
-    await db.ref('propinas/users/' + safeUid).update({ passHash: h, password: null, changed: false });
-    if(APPDATA.users[rut]){
-      APPDATA.users[rut].passHash = h;
-      APPDATA.users[rut].changed  = false;
-      delete APPDATA.users[rut].password;
-    }
-    renderClaves();
-  }catch(e){ alert('Error: '+(e.message||e.code)); }
+  const acc = (APPDATA.acceso || {})[rut] || await leerAcceso(rut);
+  if(!acc || !acc.e){ alert('Este trabajador todav\u00eda no tiene cuenta de acceso.'); return; }
+  if(!confirm('\u00bfEnviar a ' + enmascarar(acc.e) + ' un correo para que cree una nueva contrase\u00f1a?'))return;
+  try{ await fbAuth.sendPasswordResetEmail(acc.e); alert('Correo enviado a ' + enmascarar(acc.e) + '.'); }
+  catch(e){ alert('Error: '+(e.message||e.code)); }
 }
 
 
@@ -1591,64 +1705,57 @@ function initWorkerConsumo(nrut) {
     return;
   }
 
-  // Find worker history to get cobrado (c field)
-  let workerH = [];
-  for (const [wid, w] of Object.entries(APPDATA.workers || {})) {
-    if (normRut(wid) === nrut) { workerH = w.h || []; break; }
-  }
-
+  // Cada mes trae: total = lo que consumiste; descontado = lo que se descontó en tu
+  // liquidación de sueldo (consumo del mes + consumo de un mes anterior - reembolso).
+  // Manda la liquidación: es el monto que de verdad se descontó.
   const h = cdata.h;
   const totalConsumo = h.reduce((a, x) => a + (x.total || 0), 0);
-  const totalCobrado = workerH.reduce((a, x) => a + (x.c || 0), 0);
-  const totalDif = totalCobrado - totalConsumo;
-  const totalDifColor = totalDif > 0 ? 'var(--verde)' : totalDif < 0 ? 'var(--rojo-err)' : 'var(--gris-medio)';
-  const totalDifSign = totalDif > 0 ? '+' : '';
-  const ultimoMes = h[h.length - 1];
+  const totalDesc    = h.reduce((a, x) => a + (x.descontado || 0), 0);
 
   $('workerConsumoCards').innerHTML = `
     <div class="card"><div class="card-icon naranja">🍽️</div>
       <div class="card-label">Total Consumido</div>
       <div class="card-value">${clp(totalConsumo)}</div>
-      <div class="card-sub">Acumulado todos los meses</div></div>
-    <div class="card"><div class="card-icon negro">💳</div>
-      <div class="card-label">Total Cobrado</div>
-      <div class="card-value">${clp(totalCobrado)}</div>
-      <div class="card-sub">Descontado de propinas</div></div>
-    <div class="card"><div class="card-icon negro">⚖️</div>
-      <div class="card-label">Saldo</div>
-      <div class="card-value" style="color:${totalDifColor}">${totalDifSign}${clp(totalDif)}</div>
-      <div class="card-sub">${totalDif > 0 ? 'A tu favor' : totalDif < 0 ? 'Pendiente por cobrar' : 'Sin saldo'}</div></div>
+      <div class="card-sub">Suma de los meses registrados</div></div>
+    <div class="card"><div class="card-icon negro">📄</div>
+      <div class="card-label">Descontado en liquidaciones</div>
+      <div class="card-value">${clp(totalDesc)}</div>
+      <div class="card-sub">Lo que se descontó de tu sueldo</div></div>
     <div class="card"><div class="card-icon negro">🗓</div>
       <div class="card-label">Meses Registrados</div>
       <div class="card-value">${h.length}</div>
-      <div class="card-sub">Historial completo</div></div>`;
+      <div class="card-sub">Historial</div></div>`;
 
   let html = '';
   h.slice().reverse().forEach(mes => {
     const items = mes.items || [];
-    const cobrado = (workerH.find(wh => wh.m === mes.m)?.c || 0);
     const consumido = mes.total || 0;
-    const saldo = cobrado - consumido;
-    const difColor = saldo > 0 ? 'var(--verde)' : saldo < 0 ? 'var(--rojo-err)' : 'var(--gris-medio)';
-    const difSign = saldo > 0 ? '+' : '';
-    const itemsList = items.length
-      ? items.map(it => `<tr><td style="padding:6px 12px;color:var(--gris-medio);font-size:12px">↳ ${it.det}</td><td class="num" style="padding:6px 12px;font-size:12px">${clp(it.monto)}</td></tr>`).join('')
-      : '';
+    const liq = mes.liq;
+    const desc = mes.descontado || 0;
+    let notas = [];
+    // Firebase borra los null: la falta de liquidacion se marca con sinLiquidacion:true
+    if (mes.sinLiquidacion && consumido > 0) {
+      notas.push('Este consumo no se descontó por liquidación de sueldo.');
+    } else if (liq) {
+      if (liq.anterior) notas.push('Incluye ' + clp(liq.anterior) + ' de consumo de un mes anterior.');
+      if (liq.reembolso) notas.push('Se te devolvieron ' + clp(liq.reembolso) + ' de consumo descontado de más.');
+    }
+    const itemsList = items.map(it => `<tr><td style="padding:6px 12px;color:var(--gris-medio);font-size:12px">↳ ${it.fecha ? it.fecha + ' · ' : ''}${it.det}${it.cant && it.cant !== 1 ? ' ×' + it.cant : ''}</td><td class="num" style="padding:6px 12px;font-size:12px">${clp(it.monto)}</td></tr>`).join('');
     html += `
       <div class="section" style="margin-bottom:14px">
         <div class="section-header" style="margin-bottom:10px;padding-bottom:8px">
           <div class="section-title">${mesLblF(mes.m)}</div>
           <div style="font-size:16px;font-weight:800;color:var(--naranja)">${clp(consumido)}</div>
         </div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;background:var(--crema);border-radius:8px;border:1px solid var(--gris-claro)">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:${notas.length ? 6 : 12}px;padding:10px 14px;background:var(--crema);border-radius:8px;border:1px solid var(--gris-claro)">
           <div style="font-size:13px">🍽️ <span style="color:var(--gris-medio)">Consumido:</span> <strong style="color:var(--naranja)">${clp(consumido)}</strong></div>
-          <div style="font-size:13px">💳 <span style="color:var(--gris-medio)">Cobrado:</span> <strong>${clp(cobrado)}</strong></div>
-          <div style="font-size:13px">⚖️ <span style="color:var(--gris-medio)">Saldo:</span> <strong style="color:${difColor}">${difSign}${clp(saldo)}</strong></div>
+          <div style="font-size:13px">📄 <span style="color:var(--gris-medio)">Descontado en tu liquidación:</span> <strong>${clp(desc)}</strong></div>
         </div>
+        ${notas.length ? `<div style="font-size:12px;color:var(--gris-medio);margin:0 2px 12px">${notas.join(' ')}</div>` : ''}
         ${items.length ? `<div class="table-wrap"><table>
           <tbody>${itemsList}</tbody>
-          <tfoot><tr><td style="padding:8px 12px;font-weight:700">Total comandas</td><td class="num" style="padding:8px 12px;font-weight:700">${clp(consumido)}</td></tr></tfoot>
-        </table></div>` : '<p style="color:#bbb;padding:10px;font-size:12px">Sin detalle de ítems registrado.</p>'}
+          <tfoot><tr><td style="padding:8px 12px;font-weight:700">Total del mes</td><td class="num" style="padding:8px 12px;font-weight:700">${clp(consumido)}</td></tr></tfoot>
+        </table></div>` : ''}
       </div>`;
   });
   $('workerConsumoBody').innerHTML = html;
@@ -1664,18 +1771,13 @@ function renderConsumoAdmin() {
   entries.sort((a,b) => (a[1].n||'').localeCompare(b[1].n||'')).forEach(([rut, c]) => {
     const mesData = mes
       ? (c.h || []).find(h => h.m === mes)
-      : (c.h || []).reduce((acc, h) => ({ total: (acc.total||0) + (h.total||0), items: [...(acc.items||[]), ...(h.items||[])] }), {});
-    if (!mesData || !mesData.total) return;
+      : (c.h || []).reduce((acc, h) => ({ total: (acc.total||0) + (h.total||0), descontado: (acc.descontado||0) + (h.descontado||0), items: [...(acc.items||[]), ...(h.items||[])] }), {});
+    // Se muestra tambien el mes que solo tuvo descuento (consumo de un mes anterior o reembolso).
+    if (!mesData || (!mesData.total && !mesData.descontado)) return;
 
-    const nrut = normRut(rut);
-    let workerH = [];
-    for (const [wid, w] of Object.entries(workers)) {
-      if (normRut(wid) === nrut) { workerH = w.h || []; break; }
-    }
-    const cobrado = mes
-      ? (workerH.find(h => h.m === mes)?.c || 0)
-      : workerH.reduce((a, h) => a + (h.c || 0), 0);
-
+    // "Descontado" = lo que se desconto en la liquidacion de sueldo
+    // (consumo del mes + consumo de un mes anterior - reembolso). Manda la liquidacion.
+    const cobrado = mesData.descontado || 0;
     const consumido = mesData.total || 0;
     const saldo = cobrado - consumido;
     const difColor = saldo > 0 ? 'var(--verde)' : saldo < 0 ? 'var(--rojo-err)' : 'var(--gris-medio)';
@@ -1705,10 +1807,11 @@ function renderConsumoAdmin() {
       <div class="card-label">Trabajadores</div><div class="card-value">${n}</div></div>
     <div class="card"><div class="card-icon naranja">🍽️</div>
       <div class="card-label">Total Consumido</div><div class="card-value">${clp(totalConsumo)}</div></div>
-    <div class="card"><div class="card-icon negro">💳</div>
-      <div class="card-label">Total Cobrado</div><div class="card-value">${clp(totalCobrado)}</div></div>
+    <div class="card"><div class="card-icon negro">📄</div>
+      <div class="card-label">Descontado en liquidaciones</div><div class="card-value">${clp(totalCobrado)}</div></div>
     <div class="card"><div class="card-icon negro">⚖️</div>
-      <div class="card-label">Saldo</div><div class="card-value" style="color:${totalDifColor}">${totalDifSign}${clp(totalDif)}</div></div>`;
+      <div class="card-label">Diferencia</div><div class="card-value" style="color:${totalDifColor}">${totalDifSign}${clp(totalDif)}</div>
+      <div class="card-sub">Descontado − consumido</div></div>`;
   $('consumoAdminTbody').innerHTML = rows || `<tr><td colspan="8" style="text-align:center;color:#bbb;padding:20px">${mes ? 'Sin consumo para ese mes.' : 'Sin registros de consumo.'}</td></tr>`;
   $('consumoAdminFoot').innerHTML = n ? `<tr>
     <td colspan="4"><strong>TOTAL</strong></td>
@@ -1744,21 +1847,26 @@ function verComandasAdmin(rut, nombre) {
     let html = '';
     historial.forEach(mes => {
       const items = mes.items || [];
-      const cobrado = (workerH.find(wh => wh.m === mes.m)?.c || 0);
+      const cobrado = mes.descontado || 0;     // descontado en la liquidacion
       const consumido = mes.total || 0;
       const saldo = cobrado - consumido;
       const difColor = saldo > 0 ? 'var(--verde)' : saldo < 0 ? 'var(--rojo-err)' : 'var(--gris-medio)';
       const difSign = saldo > 0 ? '+' : '';
+      const liq = mes.liq;
+      const nota = (mes.sinLiquidacion && consumido > 0) ? 'Sin liquidaci\u00f3n en La Rusia: no se descont\u00f3 por sueldo.'
+        : (liq ? [liq.anterior ? 'Incluye ' + clp(liq.anterior) + ' de un mes anterior (c\u00f3d. 801).' : '',
+                  liq.reembolso ? 'Reembolso de ' + clp(liq.reembolso) + ' (c\u00f3d. 250).' : ''].filter(Boolean).join(' ') : '');
       html += `
         <div style="margin-bottom:14px;padding:14px;background:var(--crema);border-radius:10px;border:1px solid var(--gris-claro)">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
             <strong style="font-size:14px">${mesLblF(mes.m)}</strong>
             <div style="display:flex;gap:16px;font-size:12px;flex-wrap:wrap">
               <span>Consumido: <strong style="color:var(--naranja)">${clp(consumido)}</strong></span>
-              <span>Cobrado: <strong>${clp(cobrado)}</strong></span>
-              <span>Saldo: <strong style="color:${difColor}">${difSign}${clp(saldo)}</strong></span>
+              <span>Descontado: <strong>${clp(cobrado)}</strong></span>
+              <span>Diferencia: <strong style="color:${difColor}">${difSign}${clp(saldo)}</strong></span>
             </div>
           </div>
+          ${nota ? `<div style="font-size:12px;color:var(--gris-medio);margin:-4px 0 8px">${nota}</div>` : ''}
           ${items.length ? `<div class="table-wrap"><table>
             <tbody>${items.map((it,i) => `<tr>
               <td style="padding:5px 10px;font-size:12px;color:var(--gris-medio);width:30px">${i+1}</td>
@@ -2031,20 +2139,43 @@ function renderGestion() {
     const meses = w.h ? w.h.length : 0;
     const ultima = w.h && w.h.length ? clp(w.h[w.h.length-1].p) : '—';
     const safeRut = rut.replace(/_/g,'-');
-    rows += `<tr>
-      <td><strong>${w.n}</strong></td>
+    const fuera = esDesvinculado(rut);
+    rows += `<tr class="${fuera?'fila-desvinculada':''}">
+      <td><strong>${w.n}</strong>${fuera?' <span class="badge-desvinculado">Desvinculado</span>':''}</td>
       <td style="color:var(--gris-medio);font-size:12px">${safeRut}</td>
       <td style="text-align:center">${meses}</td>
       <td class="num">${ultima}</td>
       <td>
         <button class="btn-sec" style="font-size:11px;padding:4px 10px;margin-right:4px"
           onclick="editarTrabajador('${rut}')">✏️ Editar</button>
+        <button class="btn-sec" style="font-size:11px;padding:4px 10px;margin-right:4px"
+          onclick="toggleDesvinculado('${rut}','${(w.n||'').replace(/'/g,'')}')">${fuera?'↩️ Reactivar':'🚫 Desvincular'}</button>
         <button class="btn-sec" style="font-size:11px;padding:4px 10px;color:var(--rojo-err);border-color:var(--rojo-err)"
           onclick="eliminarTrabajador('${rut}','${w.n}')">🗑 Eliminar</button>
       </td>
     </tr>`;
   });
   $('gestionWorkersTbody').innerHTML = rows || '<tr><td colspan="5" style="text-align:center;color:#bbb;padding:20px">Sin trabajadores</td></tr>';
+}
+
+// Marca a alguien como desvinculado (o lo reactiva). No borra nada: sus
+// propinas y consumos se conservan, solo pierde el acceso a la app.
+async function toggleDesvinculado(rut, nombre){
+  const fuera = esDesvinculado(rut);
+  const msg = fuera
+    ? '\u00bfReactivar a ' + nombre + '?\n\nVolver\u00e1 a poder entrar a la aplicaci\u00f3n.'
+    : '\u00bfMarcar a ' + nombre + ' como desvinculado?\n\nNo podr\u00e1 entrar a la aplicaci\u00f3n. Sus propinas y consumos se conservan.';
+  if(!confirm(msg)) return;
+  const uid = uidDe(rut);
+  if(!uid){ alert('No encontr\u00e9 el usuario de ese RUT.'); return; }
+  try{
+    await db.ref('propinas/users/' + uid.replace(/\./g,'_') + '/activo').set(fuera);
+    if((APPDATA.acceso||{})[uid]){ await db.ref('propinas/acceso/' + uid + '/a').set(fuera); APPDATA.acceso[uid].a = fuera; }
+    APPDATA.users[uid].activo = fuera;
+    renderGestion();
+    if($('workerSearch')) renderWorkersList($('workerSearch').value);
+    if(typeof renderClaves === 'function' && $('clavesTable')) renderClaves();
+  }catch(e){ alert('Error: ' + (e.message || e.code)); }
 }
 
 function abrirModalTrabajador() {
