@@ -28,8 +28,7 @@ window.FIREBASE_CONFIG = {
 // false = abierta: los trabajadores entran con su RUT.
 // Ojo: este interruptor solo cambia lo que se ve. El bloqueo real está en
 // database.rules.json, y los dos se cambian juntos (ver README, punto 4).
-window.MANTENIMIENTO = true;
-
+window.MANTENIMIENTO = false;
 // Correo de la cuenta de administración en Firebase Authentication.
 // La contraseña del administrador vive SOLO en Firebase Auth: nunca en la
 // base de datos ni en este archivo.
